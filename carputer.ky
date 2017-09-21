@@ -1,0 +1,419 @@
+#:import SlideTransition kivy.uix.screenmanager.SlideTransition
+
+
+MainThread:
+	album_art:album_art
+	slider:slider
+	browsermove:browsermove
+	AnchorLayout:
+		anchor_x: 'center'
+		anchor_y: 'center'	
+			
+		#Main Screens
+		ScreenManagement: 
+			transition: SlideTransition()
+			id: st
+			size_hint: 1, 0.75
+						
+			MusicScreen:
+				name: 'music'
+				Image:
+					id: musicscreenbackground
+					source:'data/wallpapers/flame.png'
+					allow_stretch: True
+					keep_ratio: False
+
+				Show:
+					Button:
+						id:showbrowser
+						x: -3000
+						pos_hint: {'y':0.4}
+						size_hint: 0.03,0.1
+						on_press: root.movebrowser()
+						background_color:(0,0,0,0,1)
+						Image:
+							pos: showbrowser.pos
+							size: showbrowser.size
+							source: 'data/icons/next.png'
+							allow_stretch: True
+							keep_ratio: True
+		
+		
+				Browser:
+					size_hint: 0.4, 0.08
+					pos_hint: {"x": 0, 'y':0.92}
+					BoxLayout:
+						id:browsermove
+						pos_hint: {'x':1,"y":0}
+						orientation: "horizontal"
+						BoxLayout:
+							orientation: "vertical"
+							BoxLayout:
+								size_hint: 1, 0.1
+								orientation: "horizontal"
+								Button:
+									size_hint: 0.2,1
+									id: back
+									on_press: root.browser("back")
+									Image:
+										size: back.size
+										pos: back.pos
+										source: 'data/icons/arrow_back.png'
+										allow_stretch: True
+										keep_ratio: True	
+								Button:
+									id: albumtitle
+									text_size: self.width -15, None
+									font_size: albumtitle.height/3
+									on_press: albumscroller.x = 0
+								Button:
+									size_hint: 0.2,1
+									text: "Hide"
+									id: hideshow
+									on_press: root.movebrowser()
+				Scroller1:
+					size_hint: 0.4, 0.915
+					id: artistscroller
+					ScrollView:
+						size_hint: 1,1
+						pos_hint:{'x':0,'y':0}
+						GridLayout:
+							id: scroller1		
+							height: self.minimum_height
+							size_hint_y: None
+							cols: 1
+							spacing: 0, 0
+							padding: 0, 0
+				Scroller2:
+					size_hint: 0.4, 0.915
+					id: albumscroller
+					ScrollView:
+						pos_hint:{'x':0,'y':0}
+						size_hint: 1,1
+						GridLayout:
+							id: scroller2
+							height: self.minimum_height
+							size_hint_y: None
+							cols: 1
+							spacing: 0, 0
+							padding: 0, 0
+														
+				FloatLayout:
+					size_hint: 1, 1
+					Image:
+						pos_hint:{'x':0.2,'y':0}
+						id: album_art
+						source: 'unknown.png'
+						allow_stretch: True
+
+				BigScreenInfo:
+					id: hiddeninfo
+					size_hint: 0.455, 0.75
+					pos_hint: {"x": -1, 'y': 0.0}
+					BoxLayout:
+						orientation: 'vertical'
+
+						Label:
+							id: bigscreentitle
+							font_size: 40
+							text_size: self.width , None
+							size: self.texture_size
+							halign: 'center'
+
+						Label:
+							id: bigscreenartist
+							size_hint: 1, 0.3
+							font_size: self.height/1.7
+							text_size: self.size
+							halign: 'center'
+
+						Label:
+							id: bigscreenalbum
+							text_size: self.width , None
+							size: self.texture_size
+							halign: 'center'
+							font_size: 20
+							
+			MapScreen:
+				name: 'maps'
+				MapView:
+					id: mapview
+					lat: 41.257160
+					lon: -95.995102
+					zoom: 13
+					double_tap_zoom: True
+					size_hint: .93, .9
+					pos_hint: {"x": .02, "y": .05}
+					MapMarker:				
+						id: mapmarker
+						lat: 41.257160
+						lon: -95.995102
+						source: 'data/icons/car.png'
+						size: 50, 50
+
+
+				Zoom:
+					orientation: 'vertical'
+					size_hint: 0.06, 0.3
+					pos_hint: {'x': 0.03, 'y': 0.03}
+					id: +-				
+					Button:
+						id: zoomin
+						background_color:(0.9, 0.9, 0.9, 0.0)
+						on_press:  mapview.zoom = mapview.zoom +1
+						Image:
+							source: 'data/icons/plus.png'
+							size: zoomin.size
+							x: zoomin.x
+							y: zoomin.y
+							allow_stretch: True
+					Button:
+						background_color:(0.9, 0.9, 0.9, 0.0)
+						id: zoomout
+						on_press: mapview.zoom = mapview.zoom -1 
+						Image: 
+							source: 'data/icons/minus.png'
+							x: zoomout.x
+							y: zoomout.y
+							size: zoomout.size	
+							allow_stretch: True
+				CenterGPS:
+					size_hint: 0.15,0.15
+					pos_hint: {'x':0.82,'y': 0.05}
+					Button:
+						id: centergps
+						background_color:(0.9, 0.9, 0.9, 0.0)
+						on_press: root.gps_center()
+						Image:
+							source: 'data/icons/centergps.png'
+							size: centergps.size
+							x: centergps.x
+							y: centergps.y
+									
+					
+
+
+			USBScreen:
+				name: 'USB'
+				Camera:
+					id: camera
+					allow_stretch: True
+					index: 1
+					resolution: (640,480)
+			BluetoothScreen:
+				name: 'bluetooth'
+				Button:
+					background_color:(0.9, 0.9, 0.9, 0.0)
+					on_release: st.current = 'music'
+					text: 'bluetooth'
+					font_size: 50
+			SettingsScreen:
+				name: 'settings'
+				Button:
+					size_hint: 0.05, 0.1
+					on_release: print root.player.get_state()
+				Button:
+					size_hint: 0.05,0.1
+					pos_hint: {"x": 0.9, 'y':0.88}
+					on_release: app.stop()
+					Image:
+						source:'data/icons/power.png'
+						center_x: self.parent.center_x
+						center_y: self.parent.center_y
+						size: 90, 90		
+						allow_stretch: True
+			OBDIIScreen:
+				name: 'obd'
+				BoxLayout:
+					Button:
+						id: start
+						text: "start"
+						on_press: root.tester()
+					Button:
+						id: latitude
+					Button:
+						id: longitude
+					Button:
+						id: time
+					Button:
+						id: speed
+					Button:
+						id: satellites
+
+
+
+
+
+		#Bottom Screen selectors		
+		Menu:
+			AnchorLayout: 
+				anchor_x: 'center'
+				anchor_y: 'bottom'
+				BoxLayout:
+					orientation: 'horizontal'
+					size_hint: 1, .12 #define percentage of screen for quickeys width,height
+		
+					Button:  #music button
+						on_release: st.current = 'music'
+						Image:
+							source: 'data/icons/audio.png'
+							center_x: self.parent.center_x
+							center_y: self.parent.center_y
+							size: 60, 60		
+							allow_stretch: True
+					
+					Button:  #maps button
+						on_release: st.current = 'maps'
+						Image:
+							source: 'data/icons/maps.png'
+							center_x: self.parent.center_x
+							center_y: self.parent.center_y
+							size: 45, 45		
+							allow_stretch: True
+					
+					Button:   #USB button
+						on_release: st.current = 'USB'
+						Image:
+							source: 'data/icons/USB.png'
+							center_x: self.parent.center_x
+							center_y: self.parent.center_y
+							size: 50, 50		
+							allow_stretch: True
+				
+					Button:  #bluetooth button
+						on_release: st.current = 'bluetooth'
+						Image:
+							source: 'data/icons/bluetooth.png'
+							center_x: self.parent.center_x
+							center_y: self.parent.center_y
+							size: 60, 60		
+							allow_stretch: True
+
+					Button:  #settings button
+						on_release: st.current = 'settings'
+						pos_hint: {"x": 0.8, 'y':0}
+						Image:
+							source:'data/icons/settings.png'
+							center_x: self.parent.center_x
+							center_y: self.parent.center_y
+							size: 60, 60		
+							allow_stretch: True
+							
+					Button: #OBDII button
+						on_release: st.current= 'obd'
+						text: "OBDII"
+			
+			
+			
+			PlayButtons: 
+				anchor_x: 'center'
+				anchor_y: 'top'
+				BoxLayout:
+					size_hint: 1, .1
+					orientation: 'vertical'
+					padding: 7,7,0,0
+					BoxLayout:
+						orientation: 'horizontal'
+						Button:
+							id: last_track
+							size_hint: 0.055, 1	
+							on_press: root.back_button()
+							background_color:(0.9, 0.9, 0.9, 0.0)
+							Image:
+								size: last_track.size
+								source:'data/icons/back.png'
+								x: last_track.x
+								y: last_track.y
+								allow_stretch: True
+								keep_ratio: False
+						Button:
+							id: playpause
+							size_hint: 0.055, 1
+							background_color:(0.9, 0.9, 0.9, 0.0)
+							on_press: root.playpause()
+							Image:
+								id: playpausebutton
+								size: playpause.size
+								source: 'data/icons/play.png'
+								x: playpause.x
+								y: playpause.y
+								allow_stretch: True
+								keep_ratio: False
+						Button:
+							id: next
+							size_hint: 0.055, 1	
+							on_press: root.next_button()
+							background_color:(0.9, 0.9, 0.9, 0.0)
+							Image:
+								size: next.size
+								source:'data/icons/forward.png'
+								x: next.x
+								y: next.y
+								allow_stretch: True
+								keep_ratio: False
+						BoxLayout:	
+							orientation: 'vertical'
+							size_hint: 0.04, 1	
+							Button:
+								background_color:(0.9, 0.9, 0.9, 0.0)
+							Button:
+								id: shuffle
+								on_press: root.shuffleicon()
+								background_color:(0.9, 0.9, 0.9, 0.0)
+								Image:
+									id: shuffleimage
+									size: shuffle.size
+									source:'data/icons/shuffle_on.png'
+									x: shuffle.x
+									y: shuffle.y
+									allow_stretch: True
+									keep_ratio: True   
+
+						BoxLayout:
+							orientation: 'horizontal'
+							Button:
+								id: songpos
+								text: "0:00"
+								size_hint: 0.06,1
+								background_color:(0.9, 0.9, 0.9, 0.0)
+								font_size: songpos.height/2
+
+							BoxLayout:
+								orientation: 'vertical'
+								Label:
+									id: songinformation
+									background_color:(0.5,0.5,0.5,0.5)
+									font_size: songinformation.height/2
+								Slider:
+									id: slider
+									size_hint: 1, 0.35	
+							Button:
+								id: songlength
+								size_hint: 0.06,1
+								background_color:(0.9, 0.9, 0.9, 0.0)
+								text: "--:--"	
+								font_size: songlength.height/2			
+									
+			VolumeSlider:
+				id: volumecontrol
+				size_hint: .05 , 0.8
+				pos_hint: {"x": 0.95, 'y':0.1}
+				orientation: 'vertical'
+				Label:
+					font_size: 25
+					size_hint: 1, 0.05
+					text: str(int(volumeslider.value))
+					background_color:(1,1,1,0)
+				Slider:
+					value: root.volstartup()
+					orientation: 'vertical'
+					id: volumeslider
+					on_value: root.volslider(self.value)
+
+
+
+
+
+
+
+

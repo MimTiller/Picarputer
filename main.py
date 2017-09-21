@@ -1,0 +1,575 @@
+#!/usr/bin/python
+from kivy.app import App
+from kivy.uix.button import Button
+from kivy.uix.togglebutton import ToggleButton
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.image import Image
+from kivy.uix.slider import Slider
+from kivy.uix.widget import Widget
+from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.anchorlayout import AnchorLayout
+from kivy.uix.scrollview import ScrollView
+from kivy.clock import Clock
+from kivy.lang import Builder
+from kivy.properties import NumericProperty, StringProperty, BooleanProperty, ListProperty, ObjectProperty
+from kivy.uix.label import Label
+from kivy.logger import Logger
+from kivy.uix.screenmanager import ScreenManager, Screen, NoTransition, SlideTransition, SwapTransition, FadeTransition, WipeTransition, FallOutTransition, RiseInTransition
+from time import time
+from kivy.animation import Animation
+from kivy.core.window import Window
+from kivy.config import Config
+from kivy.garden.mapview import MapView
+from random import shuffle
+import re, sys, os, random, threading, time, vlc, eyed3, mutagen, glob, dataset, obd
+
+
+#==================CONFIGURATION========================================#
+Window.fullscreen = False												#Fullscrean Boolean
+Window.size = 1280,720 												    #Force a resolution, or just comment out
+screenupdatetime = 0.5													#how fast slider and song info updates. use lower values for faster time, but more cpu work
+startupvolume = 75														#change what volume the program starts at 0-100
+MusicDirectory="/home/subcake/Music"									#change what folder PiCarputer looks in for your music
+#=======================================================================#
+
+
+
+
+
+
+
+
+
+
+
+ProgDir="/home/subcake/Desktop/Picarputer"
+ArtDir = "/artwork"
+update_length_milliseconds = screenupdatetime*1000
+playicon = 'data/icons/play.png'
+pauseicon = 'data/icons/pause.png'
+db = dataset.connect('sqlite:///songlist.db')
+table = db['songs']
+
+#-----------------------------#KIVY#------------------------------------
+class ScreenManagement(ScreenManager):
+    pass
+class Menu(Screen):
+	pass
+class MusicScreen(Screen):
+	pass
+class MapScreen(Screen):
+    pass
+class USBScreen(Screen):
+    pass
+class BluetoothScreen(Screen):
+    pass
+class SettingsScreen(Screen):
+    pass
+class OBDIIScreen(Screen):
+	pass
+class Root(Screen):
+	pass
+class VolumeSlider(BoxLayout):
+	pass
+class PlayButtons(AnchorLayout):
+	pass
+class Browser(BoxLayout):
+	pass
+class Scroller1(FloatLayout):
+	pass
+class Scroller2(FloatLayout):
+	pass
+class Show(FloatLayout):
+	pass
+class BigScreenInfo(BoxLayout):
+	pass
+class Zoom(BoxLayout):
+	pass
+class CenterGPS(BoxLayout):
+	pass
+
+#-----------------------MAIN-FUNCTIONS---------------------------------#				
+class MainThread(AnchorLayout):
+	instance = vlc.libvlc_new(0,None)
+	player = instance.media_player_new()
+	media = instance.media_new_path("unknown")
+	player.set_media(media)
+
+	def __init__(self, **kwargs):
+		super(MainThread ,self).__init__(**kwargs)
+		Clock.schedule_interval(self.songpos_callback, screenupdatetime)
+		Clock.schedule_interval(self.mapupdate, screenupdatetime)
+		self.buttonlist=[]
+		self.artistlist=[]
+		self.artistlistbool = False
+		self.latitude = 41.257160
+		self.longitude = -95.995102
+		self.title = ''
+		self.album = ''
+		self.artist = ''
+		self.track = ''
+		self.level = "artist"
+		self.filesearcher()
+		self.notshuffled = []
+		self.num = 0
+		self.shuffle = True
+		self.dir_num = 13
+		self.hidden = False
+		self.car_follow = False
+		self.artist_loaded = False
+		
+	
+	def gps_center(self):
+		if self.car_follow == True:
+			self.car_follow = False
+		else:
+			self.car_follow = True
+		print self.car_follow	
+		
+	def mapupdate(self,dt):
+		if self.car_follow:
+			self.ids.mapview.center_on(self.latitude,self.longitude)
+		else:
+			pass
+	def gps_start(self):
+		t = threading.Thread(target = self.gps_initiate)
+		t.start()
+		
+	def gps_initiate(self):	
+		import gps
+		try:
+			self.ids.mapmarker.lat = gps.Latitude
+			self.ids.mapmarker.lon = gps.Longitude
+			self.ids.latitude.text = str(gps.Latitude)
+			self.ids.longitude.text = str(gps.Longitude)
+			self.ids.speed.text = str(gps.Speed)
+			self.ids.satellites.text = str(gps.Satellites)
+		except:
+			pass
+
+
+		
+	def playpause(self):
+		state = str(self.player.get_state())
+		if state == "State.NothingSpecial":
+			print "[playpause] starting first time playback"
+			self.ids.playpausebutton.source = playicon
+			try:
+				media = instance.media_new_path(self.next_Song)
+				player.set_media(media)
+				self.player.play()
+			except:
+				print "error...couldnt play"
+		elif state== "State.Playing":
+			print "[playpause] paused"	
+			self.ids.playpausebutton.source = playicon
+			self.player.pause()
+		elif state == "State.Paused":
+			print "[playpause] resuming"
+			self.ids.playpausebutton.source = pauseicon
+			self.player.play()	
+	
+
+	
+	def shuffleicon(self):
+		shuffleon = 'data/icons/shuffle_on.png'
+		shuffleoff = 'data/icons/shuffle.png'
+		if self.shuffle == True:
+			self.shuffle = False
+			self.ids.shuffleimage.source=shuffleoff
+			self.notshuffle = 0
+			print "Shuffle Off"
+		elif self.shuffle == False:
+			self.shuffle = True
+			self.ids.shuffleimage.source=shuffleon
+			print "Shuffle On"
+		self.num = 0
+		self.dir = 0
+		
+		
+	def next_file(self,direction):
+		self.num += direction
+		if self.shuffle == True:
+			self.level = 'artist'
+			try:
+				self.next_Song = self.shufflelist[self.num]				#try opening the shufflelist and playing the specified song
+			except:
+				self.shufflelist = []									#if list doesnt exist:
+				for x in table.distinct('location'):					
+					self.shufflelist.append(x['location'])				#add all songs to the list
+					shuffle(self.shufflelist)							#shuffle the list
+				self.next_Song = self.shufflelist[self.num]				#then try opening the specified song
+		else:	
+			songlist = []
+			tracklist = []																
+			for song in table.find(artist = self.artist, album = self.album):
+				songlist.append(str(song['location']))
+				tracklist.append(int(song['track']))
+			tracksort = sorted(zip(tracklist,songlist))
+			sortedtitle = [title for track, title in tracksort]	
+			
+			try:
+				print songlist
+				self.dir += direction
+				self.next_Song = sortedtitle[self.dir]
+				print self.dir
+
+			except:
+				self.dir = 0
+				self.next_Song = sortedtitle[self.dir]
+				print self.dir
+
+
+		self.media = self.instance.media_new_path(self.next_Song)
+		self.player.set_media(self.media)
+		self.player.play()
+		self.refresh_Screen(self.next_Song)
+		self.ids.playpausebutton.source = pauseicon
+		print self.next_Song
+
+
+	def next_button(self):
+		self.next_file(1)
+		
+	def back_button(self):
+		self.next_file(-1)
+		
+	def refresh_Screen(self,song):
+		root, filename = os.path.split(song)
+		self.fileindexer(root, filename)
+		self.songinfoupdate(song)
+		self.albumart(song)
+		self.slider_max()
+		self.browser("refresh")
+				
+	def filesearcher(self):
+		import scandir
+		filelist = []
+		for root, directories, filenames in scandir.walk(unicode(MusicDirectory)):
+			for filename in filenames:
+				ext = [".mp3",".m4a",".flac"]
+				for x in ext:
+					if filename.endswith(x):
+						self.filetagger(root,filename)
+
+						
+	def filetagger(self,root,filename):
+		from mutagen.mp3 import MP3
+		from mutagen.mp4 import MP4
+		from mutagen.flac import FLAC
+		location = os.path.join(root,filename)							#add the file together from filesearcher
+		MP3KEYS = ['TIT2', 'TPE1', 'TALB', 'TRCK'] 						
+		MP4KEYS =['\xa9nam','\xa9ART','\xa9alb','trkn']
+		FLACKEYS= ['title', 'artist','album','tracknumber']														
+		infolist = []	
+		
+		
+		filelist = [".mp3", ".m4a", ".flac"]
+		for x in filelist:
+			if filename.endswith(x):
+				try: 
+					audio = 
+															
+		if filename.endswith(".mp3"): 									#MP3 sort
+			try:														
+				audio = MP3(location)
+			except:
+				self.artist, self.album, self.title = "", "", ""
+			for x in MP3KEYS:
+				if audio.has_key(x):									#if audio has keys in MP3KEYS
+					infolist.append(unicode(audio[x]))
+				else: infolist.append('')
+		elif filename.endswith(".m4a"): 								#MP4/M4A sort
+			try:
+				audio = MP4(location)
+			except:
+				self.artist, self.album, self.title = "", "", ""
+			for x in MP4KEYS:
+				if audio.has_key(x):
+					infolist.append(unicode(audio[x][0]))
+				else: infolist.append('')
+		elif filename.endswith(".flac"): 								#FLAC sort
+			try:
+				audio = FLAC(location)
+			except:
+				pass
+			for x in FLACKEYS:
+				if audio.has_key(x):
+					infolist.append(unicode(audio[x][0]))
+				else: infolist.append('')
+		location = unicode(location)									
+		self.title = infolist[0]										
+		if self.title == '':
+			self.title = unicode(filename)
+		self.artist = infolist[1]
+		if self.artist == '':
+			self.artist = 'Unknown'
+		self.album = infolist[2]
+		if self.album == '':
+			self.album = 'Unknown'
+		self.track = infolist[3]
+		if self.track == '':
+			self.track = '1'
+		audiolength = int(audio.info.length)							#get length in seconds
+		size = round(os.path.getsize(location)/(1024*1024.0),1) 		#get size of file in MB rounded to 1 decimal
+		try:
+			bitrate = int(audio.info.bitrate/1000) 						#get bitrate of audio file
+		except:
+			bitrate = int((size/audiolength) * 10000)					#if no bitrate, divide file size by length to get bitrate
+		track = re.sub(r'[\[\]\[()u\'|]', '', "".join(self.track.split()))#take out unneccesary [ ] ( ) and extra spaces
+		track = re.sub('-|,|\/', '-', track)							#replace , and / with -	
+		track = track.split('-', 1)[0]
+		if table.find_one(location=location): 							#if the file is already in the database...dont add it in again
+			return
+		else:	
+			try:														#otherwise, add it in. 
+				print "adding", self.title
+				table.insert(dict(artist = self.artist, album = self.album,title = self.title, track = track, size = str(size) + "MB", length = length, bitrate = str(bitrate) + "Kbps", location = location))
+				library = {}
+			except:
+				print "failed", location	
+		
+	def songpos_callback(self, dt):										#called every time specified in the configuration
+		state = str(self.player.get_state())
+		duration = int(self.player.get_length()/1000)
+		position = int(self.player.get_time()/1000)
+		if position == -1:
+			return
+		m, s = divmod(position, 60) 									#change time from seconds to minutes and seconds
+		if s < 10:
+			s = '%02d' %s
+		self.ids.songpos.text = "{0}:{1}".format(m, s) 					#update song position text		
+		remainder = duration - int(position)
+		m, s = divmod(remainder, 60)
+		if s < 10:
+			s = '%02d' %s
+		self.ids.songlength.text = "{0}:{1}".format(m, s)				#update remaining time left on song
+		self.slider.value = position / screenupdatetime					#update slider
+		if state == "State.Ended":
+			print "{0} ended".format(self.title)
+			self.level = 'artist'
+			self.next_button()
+	
+	
+	def browser(self,instance):		
+		if instance == "back":
+			if self.level == "artist":
+				self.scrollviewbrowser()
+			elif self.level == "album":
+				self.level = "artist"
+				self.scrollviewbrowser()
+			elif self.level == "title":
+				self.level = "album"
+				self.scrollviewbrowser()
+				
+		elif instance == "refresh":
+			self.scrollviewbrowser()
+
+		else:
+			if self.level == "artist":
+				self.level = "album"
+				self.artist = instance.text
+				self.scrollviewbrowser()
+			elif self.level == "album":
+				self.level = "title"
+				self.album = instance.text
+				self.scrollviewbrowser()
+			elif self.level == "title":
+				self.title = instance.text
+				self.play_title(self.artist,self.album,self.title)
+
+
+		
+	def play_title(self, search_artist, search_album, search_title):	#send artist album and title and this will play the file and refresh the screen
+		self.artist = search_artist
+		self.album = search_album
+		self.title = search_title
+		for title in table.find(artist = search_artist, album = search_album, title = search_title ):
+			search_results = (str(title['location']))
+			print search_results
+			if os.path.isfile(search_results):
+				self.media = self.instance.media_new_path(search_results)
+				self.player.set_media(self.media)
+				self.player.play()
+				self.refresh_Screen(search_results)
+				self.ids.playpausebutton.source = pauseicon
+
+			else:
+				pass
+			
+				
+	def slider_max(self):		
+		for x in table.find(artist=self.artist,album=self.album,title=self.title):
+			length = x['length']  										#returns the max for the song length slider (max value depends on how quickly it gets updated)
+		self.slider.max = length / screenupdatetime
+	
+
+	def albumart(self,song):
+		from mutagen.mp3 import MP3
+		from mutagen.mp4 import MP4
+		from mutagen.flac import FLAC
+		album_img = ArtDir + "/" + self.album + ".jpg"
+		if os.path.isfile(album_img):
+			self.album_art.source = album_img
+		else:
+			if song.endswith('.mp3'):
+				audio = MP3(song) 										#mutagen can automatically detect format and type of tags
+				try:
+					artwork = audio.tags['APIC:'].data 					#access APIC frame and grab the image'
+					with open(album_img, 'wb') as img:
+						img.write(artwork) 								#write artwork to albumartwork directory with name of album
+						self.album_art.source = album_img
+				except:
+					print "(mp3) couldnt find artwork"
+					self.album_art.source = "unknown.png"
+
+			elif song.endswith('.m4a'):
+				audio = MP4(song)
+				try:
+					for x in range(4):
+						artwork = audio.tags['covr'][x] 				#find all art under the 'covr' list/tag
+						with open(album_img, 'wb') as img:
+							img.write(artwork) 							#write artwork to albumartwork directory with name of album
+						if os.path.isfile(album_img):
+							print "FOUND SOME ARTWORK!"
+							self.album_art.source = album_img
+				except:
+					print "(mp4)couldnt find artwork"
+					self.album_art.source = "unknown.png"
+					
+			elif song.endswith('.flac'):
+				audio = FLAC(song)
+				try:
+					artwork = audio.tags['cover']						#find all art under the 'cover' list/tag
+					with open(album_img, 'wb') as img:
+						img.write(artwork) 								#write artwork to albumartwork directory with name of album
+					if os.path.isfile(album_img):
+						print "FOUND SOME ARTWORK!"
+						self.album_art.source = album_img
+				except:
+					print "(mp4)couldnt find artwork"
+					self.album_art.source = "unknown.png"					
+
+
+	def volslider(self, value):
+		self.player.audio_set_volume(int(value))
+				
+	def volstartup(self):
+		self.player.audio_set_volume(int(startupvolume))
+		return int(self.player.audio_get_volume())
+		
+		
+	def songinfoupdate(self, song):										#take song, look up file in database, extract artist album, and title
+		for x in table.find(location = song):							
+			artist = str(x['artist'])
+			album = str(x['album'])
+			title = str(x['title'])
+			bitrate = str(x['bitrate'])
+			size = str(x['size'])
+			track = str(x['track'])
+			if len(artist) > 30:
+				artist = (artist[:30] + '...') 
+		self.ids.songinformation.text = "{0}  --  {1}".format(artist,title)
+		self.ids.bigscreenartist.text = artist
+		self.ids.bigscreentitle.text = title
+		self.ids.bigscreenalbum.text = album
+		
+	def movebrowser(self):
+		if self.hidden == True:
+			self.album_art.pos_hint = {'y':0.,"x":0.2}
+			self.ids.hiddeninfo.pos_hint = {'y':-2,"x":0}
+			self.browsermove.x = 0
+			if self.level =='artist':
+				self.ids.artistscroller.pos_hint = {'x':0}
+			else:
+				self.ids.albumscroller.pos_hint = {'x':0}
+			self.ids.showbrowser.x = -100
+			self.hidden = False
+		else:
+			self.album_art.pos_hint = {'y':0,"x":-.2}
+			self.ids.hiddeninfo.pos_hint = {"x": 0.49, 'y': 0.1}
+			self.browsermove.x = -5000
+			self.ids.artistscroller.pos_hint = {'x': -2, 'y':0}
+			self.ids.albumscroller.pos_hint = {'x': -2, 'y':0}
+			self.ids.showbrowser.x = 0
+			self.hidden = True
+
+	def scrollviewbrowser(self,*args):
+		lastalbum = ''
+		if self.level=='artist':
+			if self.hidden == True:
+				pass
+			else:
+				if self.artistlistbool == True:
+					self.ids.artistscroller.pos_hint = {"x": 0}
+					self.ids.albumscroller.pos_hint = {"x": -2}
+				else:
+					self.ids.artistscroller.pos_hint = {"x": 0}
+					self.ids.albumscroller.pos_hint = {"x": -2}
+					for x in table.distinct('artist'):
+						btn = Button(text=unicode(x['artist']), size_hint_y=None, font_size=17, height=50)
+						btn.bind(on_press=self.browser)
+						self.artistlist.append(btn)
+						self.ids.scroller1.add_widget(btn)
+					self.artistlistbool = True
+
+		elif self.level=='album':
+			for x in self.buttonlist:
+				self.ids.scroller2.remove_widget(x)
+			self.ids.artistscroller.pos_hint = {"x": -2}
+			self.ids.albumscroller.pos_hint = {"x": 0}
+			for x in table.find(artist=self.artist):
+				if x['album'] == lastalbum:
+					pass
+				else:
+					btn = Button(text=unicode(x['album']),size_hint_y=None, font_size=17, height=50)
+					btn.bind(on_press=self.browser)
+					self.buttonlist.append(btn)
+					self.ids.scroller2.add_widget(btn)
+					lastalbum = x['album']
+					
+		elif self.level=='title':
+			for x in self.buttonlist:
+				self.ids.scroller2.remove_widget(x)
+			self.ids.artistscroller.pos_hint = {"x": -2}
+			self.ids.albumscroller.pos_hint = {"x": 0}
+			for x in table.find(artist=self.artist,album=self.album):
+				btn = Button(text=unicode(x['title']), size_hint_y=None, font_size=17, height=50)
+				btn.bind(on_press=self.browser)
+				self.buttonlist.append(btn)
+				self.ids.scroller2.add_widget(btn)
+
+
+#_______________________________#MAIN APP#______________________________
+
+class MainApp(App):
+	
+	def build(self):
+		sc1 = Scroller1()
+		sc2 = Scroller2()
+		gps = CenterGPS()
+		zoom = Zoom()
+		bigscreeninfo = BigScreenInfo()
+		show = Show()
+		browser = Browser()
+		volumeslider = VolumeSlider()
+		playbuttons = PlayButtons()
+		build = Builder.load_file('carputer.ky')
+		build.add_widget(playbuttons)
+		build.add_widget(volumeslider)
+		build.add_widget(browser)
+		build.add_widget(show)
+		build.add_widget(bigscreeninfo)
+		build.add_widget(zoom)
+		build.add_widget(gps)
+		build.add_widget(sc1)
+		build.add_widget(sc2)
+
+		return build
+		
+		
+if __name__ == "__main__":
+	MainApp().run()
+	
+
