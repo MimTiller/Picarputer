@@ -1,0 +1,6 @@
+Get Year from fileindexer search
+Sort Albums by Year
+Sort Tracks by Track Number
+try to incorporate android audio into program
+try to incorporate Seek function for music
+
