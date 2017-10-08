@@ -19,7 +19,7 @@ MainThread:
 				name: 'music'
 				Image:
 					id: musicscreenbackground
-					source:'data/wallpapers/flame.png'
+					source:'data/wallpapers/blackbox.jpg'
 					allow_stretch: True
 					keep_ratio: False
 
@@ -103,7 +103,7 @@ MainThread:
 					Image:
 						pos_hint:{'x':0.2,'y':0}
 						id: album_art
-						source: 'unknown.png'
+						source: 'data/icons/unknown.png'
 						allow_stretch: True
 
 				BigScreenInfo:
@@ -142,7 +142,7 @@ MainThread:
 					lon: -95.995102
 					zoom: 13
 					double_tap_zoom: True
-					size_hint: .93, .9
+					size_hint: 1, 1
 					pos_hint: {"x": .02, "y": .05}
 					MapMarker:				
 						id: mapmarker
@@ -193,13 +193,13 @@ MainThread:
 					
 
 
-			USBScreen:
-				name: 'USB'
-				Camera:
-					id: camera
-					allow_stretch: True
-					index: 1
-					resolution: (640,480)
+			CamScreen:
+				name: 'cam'
+				BoxLayout:
+					Button:
+						on_press: root.camsetup()
+					Camera:
+						id: camera
 			BluetoothScreen:
 				name: 'bluetooth'
 				Button:
@@ -228,7 +228,7 @@ MainThread:
 					Button:
 						id: start
 						text: "start"
-						on_press: root.tester()
+						on_press: root.startusb()
 					Button:
 						id: latitude
 					Button:
@@ -271,8 +271,8 @@ MainThread:
 							size: 45, 45		
 							allow_stretch: True
 					
-					Button:   #USB button
-						on_release: st.current = 'USB'
+					Button:   #Camera button
+						on_release: st.current = 'cam'
 						Image:
 							source: 'data/icons/USB.png'
 							center_x: self.parent.center_x

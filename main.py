@@ -22,12 +22,14 @@ from kivy.core.window import Window
 from kivy.config import Config
 from kivy.garden.mapview import MapView
 from random import shuffle
-import re, sys, os, random, threading, time, vlc, eyed3, mutagen, glob, dataset, obd
+import re, sys, os, random, threading, time, eyed3, mutagen, glob, dataset, obd, usb
+from libs import vlc, tagger
+from libs.android import audio
 
 
 #==================CONFIGURATION========================================#
-Window.fullscreen = False												#Fullscrean Boolean
-Window.size = 1280,720 												    #Force a resolution, or just comment out
+#Window.fullscreen = False												#Fullscrean Boolean
+#Window.size = 1280,720 												    #Force a resolution, or just comment out
 screenupdatetime = 0.5													#how fast slider and song info updates. use lower values for faster time, but more cpu work
 startupvolume = 75														#change what volume the program starts at 0-100
 MusicDirectory="/home/subcake/Music"									#change what folder PiCarputer looks in for your music
@@ -44,7 +46,8 @@ MusicDirectory="/home/subcake/Music"									#change what folder PiCarputer look
 
 
 ProgDir="/home/subcake/Desktop/Picarputer"
-ArtDir = "/artwork"
+ArtDir = "artwork"
+ArtDir = "artwork"
 update_length_milliseconds = screenupdatetime*1000
 playicon = 'data/icons/play.png'
 pauseicon = 'data/icons/pause.png'
@@ -60,7 +63,7 @@ class MusicScreen(Screen):
 	pass
 class MapScreen(Screen):
     pass
-class USBScreen(Screen):
+class CamScreen(Screen):
     pass
 class BluetoothScreen(Screen):
     pass
@@ -100,15 +103,12 @@ class MainThread(AnchorLayout):
 		super(MainThread ,self).__init__(**kwargs)
 		Clock.schedule_interval(self.songpos_callback, screenupdatetime)
 		Clock.schedule_interval(self.mapupdate, screenupdatetime)
+		self.filelist=[]
 		self.buttonlist=[]
 		self.artistlist=[]
 		self.artistlistbool = False
 		self.latitude = 41.257160
 		self.longitude = -95.995102
-		self.title = ''
-		self.album = ''
-		self.artist = ''
-		self.track = ''
 		self.level = "artist"
 		self.filesearcher()
 		self.notshuffled = []
@@ -118,6 +118,9 @@ class MainThread(AnchorLayout):
 		self.hidden = False
 		self.car_follow = False
 		self.artist_loaded = False
+		self.artist = ''
+		self.album = ''
+		self.title = ''
 		
 	
 	def gps_center(self):
@@ -202,8 +205,8 @@ class MainThread(AnchorLayout):
 				self.next_Song = self.shufflelist[self.num]				#then try opening the specified song
 		else:	
 			songlist = []
-			tracklist = []																
-			for song in table.find(artist = self.artist, album = self.album):
+			tracklist = []												
+			for song in table.find(artist = tagger.artist, album = tagger.album):
 				songlist.append(str(song['location']))
 				tracklist.append(int(song['track']))
 			tracksort = sorted(zip(tracklist,songlist))
@@ -236,99 +239,33 @@ class MainThread(AnchorLayout):
 		self.next_file(-1)
 		
 	def refresh_Screen(self,song):
+		for x in table.find(location=song):
+			art = x['albumart']
 		root, filename = os.path.split(song)
-		self.fileindexer(root, filename)
+		tagger.filetagger(root, filename)
 		self.songinfoupdate(song)
-		self.albumart(song)
-		self.slider_max()
+		self.slider_max(song)
 		self.browser("refresh")
+		try:
+			self.album_art.source=art
+		except:
+			self.album_art.source='data/icons/unknown.png'
 				
 	def filesearcher(self):
 		import scandir
-		filelist = []
+		self.filelist = []
 		for root, directories, filenames in scandir.walk(unicode(MusicDirectory)):
 			for filename in filenames:
 				ext = [".mp3",".m4a",".flac"]
 				for x in ext:
 					if filename.endswith(x):
-						self.filetagger(root,filename)
+						self.filelist.append(x)
+						print filename
+						#tagger.filetagger(root,filename)
 
 						
-	def filetagger(self,root,filename):
-		from mutagen.mp3 import MP3
-		from mutagen.mp4 import MP4
-		from mutagen.flac import FLAC
-		location = os.path.join(root,filename)							#add the file together from filesearcher
-		MP3KEYS = ['TIT2', 'TPE1', 'TALB', 'TRCK'] 						
-		MP4KEYS =['\xa9nam','\xa9ART','\xa9alb','trkn']
-		FLACKEYS= ['title', 'artist','album','tracknumber']														
-		infolist = []	
-		
-		
-		filelist = [".mp3", ".m4a", ".flac"]
-		for x in filelist:
-			if filename.endswith(x):
-				try: 
-					audio = 
-															
-		if filename.endswith(".mp3"): 									#MP3 sort
-			try:														
-				audio = MP3(location)
-			except:
-				self.artist, self.album, self.title = "", "", ""
-			for x in MP3KEYS:
-				if audio.has_key(x):									#if audio has keys in MP3KEYS
-					infolist.append(unicode(audio[x]))
-				else: infolist.append('')
-		elif filename.endswith(".m4a"): 								#MP4/M4A sort
-			try:
-				audio = MP4(location)
-			except:
-				self.artist, self.album, self.title = "", "", ""
-			for x in MP4KEYS:
-				if audio.has_key(x):
-					infolist.append(unicode(audio[x][0]))
-				else: infolist.append('')
-		elif filename.endswith(".flac"): 								#FLAC sort
-			try:
-				audio = FLAC(location)
-			except:
-				pass
-			for x in FLACKEYS:
-				if audio.has_key(x):
-					infolist.append(unicode(audio[x][0]))
-				else: infolist.append('')
-		location = unicode(location)									
-		self.title = infolist[0]										
-		if self.title == '':
-			self.title = unicode(filename)
-		self.artist = infolist[1]
-		if self.artist == '':
-			self.artist = 'Unknown'
-		self.album = infolist[2]
-		if self.album == '':
-			self.album = 'Unknown'
-		self.track = infolist[3]
-		if self.track == '':
-			self.track = '1'
-		audiolength = int(audio.info.length)							#get length in seconds
-		size = round(os.path.getsize(location)/(1024*1024.0),1) 		#get size of file in MB rounded to 1 decimal
-		try:
-			bitrate = int(audio.info.bitrate/1000) 						#get bitrate of audio file
-		except:
-			bitrate = int((size/audiolength) * 10000)					#if no bitrate, divide file size by length to get bitrate
-		track = re.sub(r'[\[\]\[()u\'|]', '', "".join(self.track.split()))#take out unneccesary [ ] ( ) and extra spaces
-		track = re.sub('-|,|\/', '-', track)							#replace , and / with -	
-		track = track.split('-', 1)[0]
-		if table.find_one(location=location): 							#if the file is already in the database...dont add it in again
-			return
-		else:	
-			try:														#otherwise, add it in. 
-				print "adding", self.title
-				table.insert(dict(artist = self.artist, album = self.album,title = self.title, track = track, size = str(size) + "MB", length = length, bitrate = str(bitrate) + "Kbps", location = location))
-				library = {}
-			except:
-				print "failed", location	
+
+
 		
 	def songpos_callback(self, dt):										#called every time specified in the configuration
 		state = str(self.player.get_state())
@@ -399,57 +336,14 @@ class MainThread(AnchorLayout):
 				pass
 			
 				
-	def slider_max(self):		
-		for x in table.find(artist=self.artist,album=self.album,title=self.title):
-			length = x['length']  										#returns the max for the song length slider (max value depends on how quickly it gets updated)
+	def slider_max(self, song):		
+		for x in table.find(location=song):
+			length = x['length']
+										#returns the max for the song length slider (max value depends on how quickly it gets updated)
 		self.slider.max = length / screenupdatetime
+		print self.slider.max
 	
-
-	def albumart(self,song):
-		from mutagen.mp3 import MP3
-		from mutagen.mp4 import MP4
-		from mutagen.flac import FLAC
-		album_img = ArtDir + "/" + self.album + ".jpg"
-		if os.path.isfile(album_img):
-			self.album_art.source = album_img
-		else:
-			if song.endswith('.mp3'):
-				audio = MP3(song) 										#mutagen can automatically detect format and type of tags
-				try:
-					artwork = audio.tags['APIC:'].data 					#access APIC frame and grab the image'
-					with open(album_img, 'wb') as img:
-						img.write(artwork) 								#write artwork to albumartwork directory with name of album
-						self.album_art.source = album_img
-				except:
-					print "(mp3) couldnt find artwork"
-					self.album_art.source = "unknown.png"
-
-			elif song.endswith('.m4a'):
-				audio = MP4(song)
-				try:
-					for x in range(4):
-						artwork = audio.tags['covr'][x] 				#find all art under the 'covr' list/tag
-						with open(album_img, 'wb') as img:
-							img.write(artwork) 							#write artwork to albumartwork directory with name of album
-						if os.path.isfile(album_img):
-							print "FOUND SOME ARTWORK!"
-							self.album_art.source = album_img
-				except:
-					print "(mp4)couldnt find artwork"
-					self.album_art.source = "unknown.png"
 					
-			elif song.endswith('.flac'):
-				audio = FLAC(song)
-				try:
-					artwork = audio.tags['cover']						#find all art under the 'cover' list/tag
-					with open(album_img, 'wb') as img:
-						img.write(artwork) 								#write artwork to albumartwork directory with name of album
-					if os.path.isfile(album_img):
-						print "FOUND SOME ARTWORK!"
-						self.album_art.source = album_img
-				except:
-					print "(mp4)couldnt find artwork"
-					self.album_art.source = "unknown.png"					
 
 
 	def volslider(self, value):
@@ -540,6 +434,16 @@ class MainThread(AnchorLayout):
 				self.buttonlist.append(btn)
 				self.ids.scroller2.add_widget(btn)
 
+	def camsetup(self):
+		from kivy.uix.camera import Camera
+		for x in range(0,2):
+			try:
+				self.ids['camera'].index = x
+			except:
+				print "failed {0}".format(x)
+				
+	def startusb(self):
+		audio.connect('22b8','2ea4')
 
 #_______________________________#MAIN APP#______________________________
 
