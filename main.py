@@ -23,8 +23,8 @@ from kivy.config import Config
 from kivy.garden.mapview import MapView
 from random import shuffle
 import re, sys, os, random, threading, time, eyed3, mutagen, glob, dataset, obd, usb
-from libs import vlc, tagger
-from libs.android import audio
+from libs import vlc, tagger, audio
+
 
 
 #==================CONFIGURATION========================================#
