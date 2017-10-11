@@ -195,11 +195,12 @@ MainThread:
 
 			CamScreen:
 				name: 'cam'
-				BoxLayout:
-					Button:
-						on_press: root.camsetup()
-					Camera:
-						id: camera
+				Camera:
+					id: camera
+					index: 0
+					resolution: (640, 480)
+					allow_stretch: True
+
 			BluetoothScreen:
 				name: 'bluetooth'
 				Button:
