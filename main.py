@@ -92,13 +92,14 @@ class Zoom(BoxLayout):
 class CenterGPS(BoxLayout):
 	pass
 
+
 #-----------------------MAIN-FUNCTIONS---------------------------------#				
 class MainThread(AnchorLayout):
 	instance = vlc.libvlc_new(0,None)
 	player = instance.media_player_new()
 	media = instance.media_new_path("unknown")
 	player.set_media(media)
-
+	splash = NumericProperty(1)
 	def __init__(self, **kwargs):
 		super(MainThread ,self).__init__(**kwargs)
 		Clock.schedule_interval(self.songpos_callback, screenupdatetime)

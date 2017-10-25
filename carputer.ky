@@ -5,6 +5,13 @@ MainThread:
 	album_art:album_art
 	slider:slider
 	browsermove:browsermove
+	canvas.after:
+		Color:
+			rgba:(1,1,1,self.splash)
+		Rectangle:
+			pos: self.pos
+			size: self.size
+			source: 'carputer.jpg'
 	AnchorLayout:
 		anchor_x: 'center'
 		anchor_y: 'center'	
