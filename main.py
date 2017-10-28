@@ -22,6 +22,7 @@ from kivy.core.window import Window
 from kivy.config import Config
 from kivy.garden.mapview import MapView
 from random import shuffle
+from multiprocessing import Process
 import re, sys, os, random, threading, time, eyed3, mutagen, glob, dataset, obd, usb
 from libs import vlc, tagger, audio
 
@@ -44,15 +45,14 @@ MusicDirectory="/home/subcake/Music"									#change what folder PiCarputer look
 
 
 
-
 ProgDir="/home/subcake/Desktop/Picarputer"
-ArtDir = "artwork"
 ArtDir = "artwork"
 update_length_milliseconds = screenupdatetime*1000
 playicon = 'data/icons/play.png'
 pauseicon = 'data/icons/pause.png'
 db = dataset.connect('sqlite:///songlist.db')
 table = db['songs']
+
 
 #-----------------------------#KIVY#------------------------------------
 class ScreenManagement(ScreenManager):
@@ -99,19 +99,19 @@ class MainThread(AnchorLayout):
 	player = instance.media_player_new()
 	media = instance.media_new_path("unknown")
 	player.set_media(media)
-	splash = NumericProperty(1)
+	splash = int(1)
+	
+	
 	def __init__(self, **kwargs):
 		super(MainThread ,self).__init__(**kwargs)
 		Clock.schedule_interval(self.songpos_callback, screenupdatetime)
 		Clock.schedule_interval(self.mapupdate, screenupdatetime)
-		self.filelist=[]
 		self.buttonlist=[]
 		self.artistlist=[]
 		self.artistlistbool = False
 		self.latitude = 41.257160
 		self.longitude = -95.995102
 		self.level = "artist"
-		self.filesearcher()
 		self.notshuffled = []
 		self.num = 0
 		self.shuffle = True
@@ -122,7 +122,8 @@ class MainThread(AnchorLayout):
 		self.artist = ''
 		self.album = ''
 		self.title = ''
-		
+
+
 	
 	def gps_center(self):
 		if self.car_follow == True:
@@ -136,6 +137,7 @@ class MainThread(AnchorLayout):
 			self.ids.mapview.center_on(self.latitude,self.longitude)
 		else:
 			pass
+			
 	def gps_start(self):
 		t = threading.Thread(target = self.gps_initiate)
 		t.start()
@@ -240,8 +242,12 @@ class MainThread(AnchorLayout):
 		self.next_file(-1)
 		
 	def refresh_Screen(self,song):
-		for x in table.find(location=song):
+		x = table.find_one(location=song)
+		try:
+			
 			art = x['albumart']
+		except:
+			print "art wasnt found"
 		root, filename = os.path.split(song)
 		tagger.filetagger(root, filename)
 		self.songinfoupdate(song)
@@ -252,22 +258,9 @@ class MainThread(AnchorLayout):
 		except:
 			self.album_art.source='data/icons/unknown.png'
 				
-	def filesearcher(self):
-		import scandir
-		self.filelist = []
-		for root, directories, filenames in scandir.walk(unicode(MusicDirectory)):
-			for filename in filenames:
-				ext = [".mp3",".m4a",".flac"]
-				for x in ext:
-					if filename.endswith(x):
-						self.filelist.append(x)
-						print filename
-						#tagger.filetagger(root,filename)
-
-						
+			
 
 
-		
 	def songpos_callback(self, dt):										#called every time specified in the configuration
 		state = str(self.player.get_state())
 		duration = int(self.player.get_length()/1000)
@@ -390,6 +383,13 @@ class MainThread(AnchorLayout):
 			self.ids.showbrowser.x = 0
 			self.hidden = True
 
+	def refresh_scrollviewbrowser(self):
+		for x in self.artistlist:
+			self.ids.scroller1.remove_widget(x)
+		self.artistlistbool=False
+		self.scrollviewbrowser()
+
+
 	def scrollviewbrowser(self,*args):
 		lastalbum = ''
 		if self.level=='artist':
@@ -403,7 +403,7 @@ class MainThread(AnchorLayout):
 					self.ids.artistscroller.pos_hint = {"x": 0}
 					self.ids.albumscroller.pos_hint = {"x": -2}
 					for x in table.distinct('artist'):
-						btn = Button(text=unicode(x['artist']), size_hint_y=None, font_size=17, height=50)
+						btn = Button(id=unicode(x['artist']),text=unicode(x['artist']), size_hint_y=None, font_size=17, height=50)
 						btn.bind(on_press=self.browser)
 						self.artistlist.append(btn)
 						self.ids.scroller1.add_widget(btn)
@@ -446,10 +446,26 @@ class MainThread(AnchorLayout):
 	def startusb(self):
 		audio.connect('22b8','2ea4')
 
+	def filesearcher():
+		import scandir
+		for root, directories, filenames in scandir.walk(unicode(MusicDirectory)):
+			for filename in filenames:
+				ext = [".mp3",".m4a",".flac"]
+				for x in ext:
+					if filename.endswith(x):
+						location = os.path.join(root,filename)
+						if table.find_one(location=location):
+							pass
+						else:
+							print "passing to filetagger", filename
+							tagger.filetagger(root,filename)							
+	Process(target=filesearcher).start()
+
+	splash=0
+
 #_______________________________#MAIN APP#______________________________
 
 class MainApp(App):
-	
 	def build(self):
 		sc1 = Scroller1()
 		sc2 = Scroller2()
@@ -470,11 +486,12 @@ class MainApp(App):
 		build.add_widget(gps)
 		build.add_widget(sc1)
 		build.add_widget(sc2)
-
 		return build
 		
 		
+
+
 if __name__ == "__main__":
 	MainApp().run()
-	
+
 

@@ -7,7 +7,7 @@ MainThread:
 	browsermove:browsermove
 	canvas.after:
 		Color:
-			rgba:(1,1,1,self.splash)
+			rgba:(1,1,1,root.splash)
 		Rectangle:
 			pos: self.pos
 			size: self.size
@@ -69,10 +69,9 @@ MainThread:
 										allow_stretch: True
 										keep_ratio: True	
 								Button:
-									id: albumtitle
-									text_size: self.width -15, None
-									font_size: albumtitle.height/3
-									on_press: albumscroller.x = 0
+									id: refresh
+									on_press: root.refresh_scrollviewbrowser()
+
 								Button:
 									size_hint: 0.2,1
 									text: "Hide"
@@ -202,11 +201,7 @@ MainThread:
 
 			CamScreen:
 				name: 'cam'
-				Camera:
-					id: camera
-					index: 0
-					resolution: (640, 480)
-					allow_stretch: True
+
 
 			BluetoothScreen:
 				name: 'bluetooth'
