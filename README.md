@@ -1,9 +1,9 @@
 This is the repo for Picarputer, a python program for the Raspberry Pi
 
-#INSTALLATION:
+# INSTALLATION:
 change directory to the picarputer folder
 run 'sudo bash dependencies.sh'
 
-#USAGE:
+# USAGE:
 to use the application, simply run
 'python main.py' in the picarputer folder
