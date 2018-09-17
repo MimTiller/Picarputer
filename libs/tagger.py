@@ -57,7 +57,7 @@ def filetagger(root,filename):
 	track = track.split('-', 1)[0]
 
 	if not table.find_one(location=location): #if cant find the song in the database:
-		print "pass"
+		print ("pass")
 		pass
 	else:
 		db_adder(artist,album,title,track,size,length,bitrate,location)
@@ -66,7 +66,7 @@ def filetagger(root,filename):
 def albumart(song):
 	for x in table.find(location=song):
 		album = x['album']
-		print x['album']
+		print (x['album'])
 	album_img = str("artwork/" + album + ".jpg")
 	artkey = {MP3:'APIC:',MP4:'covr',FLAC:'cover'}
 	if os.path.isfile(album_img):
@@ -79,14 +79,14 @@ def albumart(song):
 					artwork = audio.tags[artkey[filelist[x]]].data
 					with open(album_img, 'wb') as img:
 						img.write(artwork)
-						print "found art"
+						print ("found art")
 						table.upsert(dict(location=song,albumart=album_img),['location'])
-						print "added"
+						print ("added")
 				except Exception as x:
-					print 'Error:', x, song
+					print ('Error:', x, song)
 				
 	
 def db_adder(artist,album,title,track,size,length,bitrate,location):
-	print "adding", title
+	print ("adding", title)
 	table.insert(dict(artist = artist, album = album,title = title, track = track, size = str(size) + "MB", length = length, bitrate = str(bitrate) + "Kbps", location = location))
 	albumart(location)

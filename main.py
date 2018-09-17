@@ -1,45 +1,73 @@
-#!/usr/bin/python
+ #!/usr/bin/python
+
+
+def loader():
+	from importlib import util
+	Modules = ['kivy','obd','mutagen','vlcpy','eyed3', 'dataset', 'pyusb']
+	for module in Modules:
+		print ("Looking for {}".format(module))
+		find = util.find_spec(module)
+		if find is None:
+			raise Exception('Cant find module {0}, you can install using pip! (pip install {0})'.format(module))
+		else:
+			print ("FOUND: module {}".format(module))
+loader()
+
+
+#kivy imports
 from kivy.app import App
-from kivy.uix.button import Button
-from kivy.uix.togglebutton import ToggleButton
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.image import Image
-from kivy.uix.slider import Slider
-from kivy.uix.widget import Widget
-from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.anchorlayout import AnchorLayout
-from kivy.uix.scrollview import ScrollView
-from kivy.clock import Clock
-from kivy.lang import Builder
-from kivy.properties import NumericProperty, StringProperty, BooleanProperty, ListProperty, ObjectProperty
-from kivy.uix.label import Label
-from kivy.logger import Logger
-from kivy.uix.screenmanager import ScreenManager, Screen, NoTransition, SlideTransition, SwapTransition, FadeTransition, WipeTransition, FallOutTransition, RiseInTransition
-from time import time
 from kivy.animation import Animation
 from kivy.core.window import Window
 from kivy.config import Config
+from kivy.clock import Clock
+
+#layouts
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.anchorlayout import AnchorLayout
+
+#widgets
+from kivy.uix.togglebutton import ToggleButton
+from kivy.uix.button import Button
+from kivy.uix.image import Image
+from kivy.uix.slider import Slider
+from kivy.uix.widget import Widget
+from kivy.uix.scrollview import ScrollView
+from kivy.uix.label import Label
+
+#misc
+
+from kivy.logger import Logger
+from kivy.lang import Builder
+from kivy.properties import NumericProperty, StringProperty, BooleanProperty, ListProperty, ObjectProperty
+from kivy.uix.screenmanager import ScreenManager, Screen, NoTransition, SlideTransition, SwapTransition, FadeTransition, WipeTransition, FallOutTransition, RiseInTransition
+
+#garden imports
 from kivy.garden.mapview import MapView
+
+#non kivy imports
+from time import time
 from random import shuffle
 from multiprocessing import Process
-import re, sys, os, random, threading, time, eyed3, mutagen, glob, dataset, obd, usb
-from libs import vlc, tagger, audio
+import re, sys, os, random, threading, time, eyed3, mutagen, glob, dataset, usb
+from libs import tagger, audio, vlc
 
 
 
 #==================CONFIGURATION========================================#
-#Window.fullscreen = False												#Fullscrean Boolean
-#Window.size = 1280,720 												    #Force a resolution, or just comment out
+Window.fullscreen = False												#Fullscrean Boolean
+Window.size = 1280,720 												    #Force a resolution, or just comment out
 screenupdatetime = 0.5													#how fast slider and song info updates. use lower values for faster time, but more cpu work
 startupvolume = 75														#change what volume the program starts at 0-100
 MusicDirectory="/home/subcake/Music"									#change what folder PiCarputer looks in for your music
 #=======================================================================#
-
-
-
-
-
+Config.read('config.ini')
+Config.set('graphics', 'width', '800')
+Config.set('graphics', 'height', '450')
+Config.set('graphics', 'borderless', 'True')
+Config.set('graphics','resizable',0)
+Config.write()
 
 
 
@@ -95,10 +123,11 @@ class CenterGPS(BoxLayout):
 
 #-----------------------MAIN-FUNCTIONS---------------------------------#				
 class MainThread(AnchorLayout):
-	instance = vlc.libvlc_new(0,None)
-	player = instance.media_player_new()
-	media = instance.media_new_path("unknown")
-	player.set_media(media)
+	# instance = vlc.libvlc_new(0,"C:/test.wav")
+	# player = instance.media_player_new()
+	# media = instance.media_new_path("unknown")
+	# player.set_media(media)
+	player = vlc.MediaPlayer("/path/to/file.flac")
 	splash = int(1)
 	
 	
@@ -130,7 +159,7 @@ class MainThread(AnchorLayout):
 			self.car_follow = False
 		else:
 			self.car_follow = True
-		print self.car_follow	
+		print (self.car_follow)	
 		
 	def mapupdate(self,dt):
 		if self.car_follow:
@@ -159,20 +188,20 @@ class MainThread(AnchorLayout):
 	def playpause(self):
 		state = str(self.player.get_state())
 		if state == "State.NothingSpecial":
-			print "[playpause] starting first time playback"
+			print ("[playpause] starting first time playback")
 			self.ids.playpausebutton.source = playicon
 			try:
 				media = instance.media_new_path(self.next_Song)
 				player.set_media(media)
 				self.player.play()
 			except:
-				print "error...couldnt play"
+				print ("error...couldnt play")
 		elif state== "State.Playing":
-			print "[playpause] paused"	
+			print ("[playpause] paused")	
 			self.ids.playpausebutton.source = playicon
 			self.player.pause()
 		elif state == "State.Paused":
-			print "[playpause] resuming"
+			print ("[playpause] resuming")
 			self.ids.playpausebutton.source = pauseicon
 			self.player.play()	
 	
@@ -185,11 +214,11 @@ class MainThread(AnchorLayout):
 			self.shuffle = False
 			self.ids.shuffleimage.source=shuffleoff
 			self.notshuffle = 0
-			print "Shuffle Off"
+			print ("Shuffle Off")
 		elif self.shuffle == False:
 			self.shuffle = True
 			self.ids.shuffleimage.source=shuffleon
-			print "Shuffle On"
+			print ("Shuffle On")
 		self.num = 0
 		self.dir = 0
 		
@@ -216,15 +245,15 @@ class MainThread(AnchorLayout):
 			sortedtitle = [title for track, title in tracksort]	
 			
 			try:
-				print songlist
+				print (songlist)
 				self.dir += direction
 				self.next_Song = sortedtitle[self.dir]
-				print self.dir
+				print (self.dir)
 
 			except:
 				self.dir = 0
 				self.next_Song = sortedtitle[self.dir]
-				print self.dir
+				print (self.dir)
 
 
 		self.media = self.instance.media_new_path(self.next_Song)
@@ -232,7 +261,7 @@ class MainThread(AnchorLayout):
 		self.player.play()
 		self.refresh_Screen(self.next_Song)
 		self.ids.playpausebutton.source = pauseicon
-		print self.next_Song
+		print (self.next_Song)
 
 
 	def next_button(self):
@@ -247,7 +276,7 @@ class MainThread(AnchorLayout):
 			
 			art = x['albumart']
 		except:
-			print "art wasnt found"
+			print ("art wasnt found")
 		root, filename = os.path.split(song)
 		tagger.filetagger(root, filename)
 		self.songinfoupdate(song)
@@ -278,7 +307,7 @@ class MainThread(AnchorLayout):
 		self.ids.songlength.text = "{0}:{1}".format(m, s)				#update remaining time left on song
 		self.slider.value = position / screenupdatetime					#update slider
 		if state == "State.Ended":
-			print "{0} ended".format(self.title)
+			print ("{0} ended".format(self.title))
 			self.level = 'artist'
 			self.next_button()
 	
@@ -318,7 +347,7 @@ class MainThread(AnchorLayout):
 		self.title = search_title
 		for title in table.find(artist = search_artist, album = search_album, title = search_title ):
 			search_results = (str(title['location']))
-			print search_results
+			print (search_results)
 			if os.path.isfile(search_results):
 				self.media = self.instance.media_new_path(search_results)
 				self.player.set_media(self.media)
@@ -335,10 +364,8 @@ class MainThread(AnchorLayout):
 			length = x['length']
 										#returns the max for the song length slider (max value depends on how quickly it gets updated)
 		self.slider.max = length / screenupdatetime
-		print self.slider.max
+		print (self.slider.max)
 	
-					
-
 
 	def volslider(self, value):
 		self.player.audio_set_volume(int(value))
@@ -441,14 +468,13 @@ class MainThread(AnchorLayout):
 			try:
 				self.ids['camera'].index = x
 			except:
-				print "failed {0}".format(x)
+				print ("failed {0}".format(x))
 				
 	def startusb(self):
 		audio.connect('22b8','2ea4')
 
 	def filesearcher():
-		import scandir
-		for root, directories, filenames in scandir.walk(unicode(MusicDirectory)):
+		for root, directories, filenames in os.walk(str(MusicDirectory)):
 			for filename in filenames:
 				ext = [".mp3",".m4a",".flac"]
 				for x in ext:
@@ -457,16 +483,19 @@ class MainThread(AnchorLayout):
 						if table.find_one(location=location):
 							pass
 						else:
-							print "passing to filetagger", filename
+							print ("passing to filetagger", filename)
 							tagger.filetagger(root,filename)							
-	Process(target=filesearcher).start()
+	filesearcher()
 
 	splash=0
 
 #_______________________________#MAIN APP#______________________________
 
 class MainApp(App):
+	
+	
 	def build(self):
+		self.icon = 'music.png'
 		sc1 = Scroller1()
 		sc2 = Scroller2()
 		gps = CenterGPS()
@@ -487,8 +516,8 @@ class MainApp(App):
 		build.add_widget(sc1)
 		build.add_widget(sc2)
 		return build
-		
-		
+
+
 
 
 if __name__ == "__main__":
