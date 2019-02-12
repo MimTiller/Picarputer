@@ -1,20 +1,9 @@
  #!/usr/bin/python
 
 
-def loader():
-	from importlib import util
-	Modules = ['kivy','obd','mutagen','vlcpy','eyed3', 'dataset', 'pyusb']
-	for module in Modules:
-		print ("Looking for {}".format(module))
-		find = util.find_spec(module)
-		if find is None:
-			raise Exception('Cant find module {0}, you can install using pip! (pip install {0})'.format(module))
-		else:
-			print ("FOUND: module {}".format(module))
-loader()
-
 
 #kivy imports
+
 from kivy.app import App
 from kivy.animation import Animation
 from kivy.core.window import Window
@@ -43,8 +32,6 @@ from kivy.lang import Builder
 from kivy.properties import NumericProperty, StringProperty, BooleanProperty, ListProperty, ObjectProperty
 from kivy.uix.screenmanager import ScreenManager, Screen, NoTransition, SlideTransition, SwapTransition, FadeTransition, WipeTransition, FallOutTransition, RiseInTransition
 
-#garden imports
-from kivy.garden.mapview import MapView
 
 #non kivy imports
 from time import time
@@ -54,6 +41,7 @@ import re, sys, os, random, threading, time, eyed3, mutagen, glob, dataset, usb
 from libs import tagger, audio, vlc
 
 
+	
 
 #==================CONFIGURATION========================================#
 Window.fullscreen = False												#Fullscrean Boolean
@@ -123,10 +111,10 @@ class CenterGPS(BoxLayout):
 
 #-----------------------MAIN-FUNCTIONS---------------------------------#				
 class MainThread(AnchorLayout):
-	# instance = vlc.libvlc_new(0,"C:/test.wav")
-	# player = instance.media_player_new()
-	# media = instance.media_new_path("unknown")
-	# player.set_media(media)
+	instance = vlc.Instance()
+	player = instance.media_player_new("C:/test.wav")
+	media = instance.media_new_path("unknown")
+	player.set_media(media)
 	player = vlc.MediaPlayer("/path/to/file.flac")
 	splash = int(1)
 	

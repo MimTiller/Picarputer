@@ -140,62 +140,8 @@ MainThread:
 							halign: 'center'
 							font_size: 20
 							
-			MapScreen:
-				name: 'maps'
-				MapView:
-					id: mapview
-					lat: 41.257160
-					lon: -95.995102
-					zoom: 13
-					double_tap_zoom: True
-					size_hint: 1, 1
-					pos_hint: {"x": .02, "y": .05}
-					MapMarker:				
-						id: mapmarker
-						lat: 41.257160
-						lon: -95.995102
-						source: 'data/icons/car.png'
-						size: 50, 50
 
 
-				Zoom:
-					orientation: 'vertical'
-					size_hint: 0.06, 0.3
-					pos_hint: {'x': 0.03, 'y': 0.03}
-					id: +-				
-					Button:
-						id: zoomin
-						background_color:(0.9, 0.9, 0.9, 0.0)
-						on_press:  mapview.zoom = mapview.zoom +1
-						Image:
-							source: 'data/icons/plus.png'
-							size: zoomin.size
-							x: zoomin.x
-							y: zoomin.y
-							allow_stretch: True
-					Button:
-						background_color:(0.9, 0.9, 0.9, 0.0)
-						id: zoomout
-						on_press: mapview.zoom = mapview.zoom -1 
-						Image: 
-							source: 'data/icons/minus.png'
-							x: zoomout.x
-							y: zoomout.y
-							size: zoomout.size	
-							allow_stretch: True
-				CenterGPS:
-					size_hint: 0.15,0.15
-					pos_hint: {'x':0.82,'y': 0.05}
-					Button:
-						id: centergps
-						background_color:(0.9, 0.9, 0.9, 0.0)
-						on_press: root.gps_center()
-						Image:
-							source: 'data/icons/centergps.png'
-							size: centergps.size
-							x: centergps.x
-							y: centergps.y
-									
 					
 
 
@@ -214,7 +160,7 @@ MainThread:
 				name: 'settings'
 				Button:
 					size_hint: 0.05, 0.1
-					on_release: print root.player.get_state()
+					on_release: print (root.player.get_state())
 				Button:
 					size_hint: 0.05,0.1
 					pos_hint: {"x": 0.9, 'y':0.88}
@@ -265,14 +211,6 @@ MainThread:
 							size: 60, 60		
 							allow_stretch: True
 					
-					Button:  #maps button
-						on_release: st.current = 'maps'
-						Image:
-							source: 'data/icons/maps.png'
-							center_x: self.parent.center_x
-							center_y: self.parent.center_y
-							size: 45, 45		
-							allow_stretch: True
 					
 					Button:   #Camera button
 						on_release: st.current = 'cam'
