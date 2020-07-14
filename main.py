@@ -41,7 +41,7 @@ import re, sys, os, random, threading, time, eyed3, mutagen, glob, dataset, usb
 from libs import tagger, audio, vlc
 
 
-	
+
 
 #==================CONFIGURATION========================================#
 Window.fullscreen = False												#Fullscrean Boolean
@@ -77,12 +77,6 @@ class Menu(Screen):
 	pass
 class MusicScreen(Screen):
 	pass
-class MapScreen(Screen):
-    pass
-class CamScreen(Screen):
-    pass
-class BluetoothScreen(Screen):
-    pass
 class SettingsScreen(Screen):
     pass
 class OBDIIScreen(Screen):
@@ -93,23 +87,17 @@ class VolumeSlider(BoxLayout):
 	pass
 class PlayButtons(AnchorLayout):
 	pass
-class Browser(BoxLayout):
-	pass
+
 class Scroller1(FloatLayout):
 	pass
 class Scroller2(FloatLayout):
 	pass
-class Show(FloatLayout):
-	pass
 class BigScreenInfo(BoxLayout):
 	pass
-class Zoom(BoxLayout):
-	pass
-class CenterGPS(BoxLayout):
-	pass
 
 
-#-----------------------MAIN-FUNCTIONS---------------------------------#				
+
+#-----------------------MAIN-FUNCTIONS---------------------------------#
 class MainThread(AnchorLayout):
 	instance = vlc.Instance()
 	player = instance.media_player_new("C:/test.wav")
@@ -117,12 +105,11 @@ class MainThread(AnchorLayout):
 	player.set_media(media)
 	player = vlc.MediaPlayer("/path/to/file.flac")
 	splash = int(1)
-	
-	
+
+
 	def __init__(self, **kwargs):
 		super(MainThread ,self).__init__(**kwargs)
 		Clock.schedule_interval(self.songpos_callback, screenupdatetime)
-		Clock.schedule_interval(self.mapupdate, screenupdatetime)
 		self.buttonlist=[]
 		self.artistlist=[]
 		self.artistlistbool = False
@@ -141,38 +128,6 @@ class MainThread(AnchorLayout):
 		self.title = ''
 
 
-	
-	def gps_center(self):
-		if self.car_follow == True:
-			self.car_follow = False
-		else:
-			self.car_follow = True
-		print (self.car_follow)	
-		
-	def mapupdate(self,dt):
-		if self.car_follow:
-			self.ids.mapview.center_on(self.latitude,self.longitude)
-		else:
-			pass
-			
-	def gps_start(self):
-		t = threading.Thread(target = self.gps_initiate)
-		t.start()
-		
-	def gps_initiate(self):	
-		import gps
-		try:
-			self.ids.mapmarker.lat = gps.Latitude
-			self.ids.mapmarker.lon = gps.Longitude
-			self.ids.latitude.text = str(gps.Latitude)
-			self.ids.longitude.text = str(gps.Longitude)
-			self.ids.speed.text = str(gps.Speed)
-			self.ids.satellites.text = str(gps.Satellites)
-		except:
-			pass
-
-
-		
 	def playpause(self):
 		state = str(self.player.get_state())
 		if state == "State.NothingSpecial":
@@ -185,16 +140,16 @@ class MainThread(AnchorLayout):
 			except:
 				print ("error...couldnt play")
 		elif state== "State.Playing":
-			print ("[playpause] paused")	
+			print ("[playpause] paused")
 			self.ids.playpausebutton.source = playicon
 			self.player.pause()
 		elif state == "State.Paused":
 			print ("[playpause] resuming")
 			self.ids.playpausebutton.source = pauseicon
-			self.player.play()	
-	
+			self.player.play()
 
-	
+
+
 	def shuffleicon(self):
 		shuffleon = 'data/icons/shuffle_on.png'
 		shuffleoff = 'data/icons/shuffle.png'
@@ -209,8 +164,8 @@ class MainThread(AnchorLayout):
 			print ("Shuffle On")
 		self.num = 0
 		self.dir = 0
-		
-		
+
+
 	def next_file(self,direction):
 		self.num += direction
 		if self.shuffle == True:
@@ -219,19 +174,19 @@ class MainThread(AnchorLayout):
 				self.next_Song = self.shufflelist[self.num]				#try opening the shufflelist and playing the specified song
 			except:
 				self.shufflelist = []									#if list doesnt exist:
-				for x in table.distinct('location'):					
+				for x in table.distinct('location'):
 					self.shufflelist.append(x['location'])				#add all songs to the list
 					shuffle(self.shufflelist)							#shuffle the list
 				self.next_Song = self.shufflelist[self.num]				#then try opening the specified song
-		else:	
+		else:
 			songlist = []
-			tracklist = []												
+			tracklist = []
 			for song in table.find(artist = tagger.artist, album = tagger.album):
 				songlist.append(str(song['location']))
 				tracklist.append(int(song['track']))
 			tracksort = sorted(zip(tracklist,songlist))
-			sortedtitle = [title for track, title in tracksort]	
-			
+			sortedtitle = [title for track, title in tracksort]
+
 			try:
 				print (songlist)
 				self.dir += direction
@@ -254,14 +209,14 @@ class MainThread(AnchorLayout):
 
 	def next_button(self):
 		self.next_file(1)
-		
+
 	def back_button(self):
 		self.next_file(-1)
-		
+
 	def refresh_Screen(self,song):
 		x = table.find_one(location=song)
 		try:
-			
+
 			art = x['albumart']
 		except:
 			print ("art wasnt found")
@@ -274,8 +229,8 @@ class MainThread(AnchorLayout):
 			self.album_art.source=art
 		except:
 			self.album_art.source='data/icons/unknown.png'
-				
-			
+
+
 
 
 	def songpos_callback(self, dt):										#called every time specified in the configuration
@@ -287,7 +242,7 @@ class MainThread(AnchorLayout):
 		m, s = divmod(position, 60) 									#change time from seconds to minutes and seconds
 		if s < 10:
 			s = '%02d' %s
-		self.ids.songpos.text = "{0}:{1}".format(m, s) 					#update song position text		
+		self.ids.songpos.text = "{0}:{1}".format(m, s) 					#update song position text
 		remainder = duration - int(position)
 		m, s = divmod(remainder, 60)
 		if s < 10:
@@ -298,37 +253,37 @@ class MainThread(AnchorLayout):
 			print ("{0} ended".format(self.title))
 			self.level = 'artist'
 			self.next_button()
-	
-	
-	def browser(self,instance):		
-		if instance == "back":
-			if self.level == "artist":
-				self.scrollviewbrowser()
-			elif self.level == "album":
-				self.level = "artist"
-				self.scrollviewbrowser()
-			elif self.level == "title":
-				self.level = "album"
-				self.scrollviewbrowser()
-				
-		elif instance == "refresh":
-			self.scrollviewbrowser()
-
-		else:
-			if self.level == "artist":
-				self.level = "album"
-				self.artist = instance.text
-				self.scrollviewbrowser()
-			elif self.level == "album":
-				self.level = "title"
-				self.album = instance.text
-				self.scrollviewbrowser()
-			elif self.level == "title":
-				self.title = instance.text
-				self.play_title(self.artist,self.album,self.title)
 
 
-		
+	# def browser(self,instance):
+		# if instance == "back":
+			# if self.level == "artist":
+				# self.scrollviewbrowser()
+			# elif self.level == "album":
+				# self.level = "artist"
+				# self.scrollviewbrowser()
+			# elif self.level == "title":
+				# self.level = "album"
+				# self.scrollviewbrowser()
+
+		# elif instance == "refresh":
+			# self.scrollviewbrowser()
+
+		# else:
+			# if self.level == "artist":
+				# self.level = "album"
+				# self.artist = instance.text
+				# self.scrollviewbrowser()
+			# elif self.level == "album":
+				# self.level = "title"
+				# self.album = instance.text
+				# self.scrollviewbrowser()
+			# elif self.level == "title":
+				# self.title = instance.text
+				# self.play_title(self.artist,self.album,self.title)
+
+
+
 	def play_title(self, search_artist, search_album, search_title):	#send artist album and title and this will play the file and refresh the screen
 		self.artist = search_artist
 		self.album = search_album
@@ -345,26 +300,26 @@ class MainThread(AnchorLayout):
 
 			else:
 				pass
-			
-				
-	def slider_max(self, song):		
+
+
+	def slider_max(self, song):
 		for x in table.find(location=song):
 			length = x['length']
 										#returns the max for the song length slider (max value depends on how quickly it gets updated)
 		self.slider.max = length / screenupdatetime
 		print (self.slider.max)
-	
+
 
 	def volslider(self, value):
 		self.player.audio_set_volume(int(value))
-				
+
 	def volstartup(self):
 		self.player.audio_set_volume(int(startupvolume))
 		return int(self.player.audio_get_volume())
-		
-		
+
+
 	def songinfoupdate(self, song):										#take song, look up file in database, extract artist album, and title
-		for x in table.find(location = song):							
+		for x in table.find(location = song):
 			artist = str(x['artist'])
 			album = str(x['album'])
 			title = str(x['title'])
@@ -372,31 +327,31 @@ class MainThread(AnchorLayout):
 			size = str(x['size'])
 			track = str(x['track'])
 			if len(artist) > 30:
-				artist = (artist[:30] + '...') 
+				artist = (artist[:30] + '...')
 		self.ids.songinformation.text = "{0}  --  {1}".format(artist,title)
 		self.ids.bigscreenartist.text = artist
 		self.ids.bigscreentitle.text = title
 		self.ids.bigscreenalbum.text = album
-		
-	def movebrowser(self):
-		if self.hidden == True:
-			self.album_art.pos_hint = {'y':0.,"x":0.2}
-			self.ids.hiddeninfo.pos_hint = {'y':-2,"x":0}
-			self.browsermove.x = 0
-			if self.level =='artist':
-				self.ids.artistscroller.pos_hint = {'x':0}
-			else:
-				self.ids.albumscroller.pos_hint = {'x':0}
-			self.ids.showbrowser.x = -100
-			self.hidden = False
-		else:
-			self.album_art.pos_hint = {'y':0,"x":-.2}
-			self.ids.hiddeninfo.pos_hint = {"x": 0.49, 'y': 0.1}
-			self.browsermove.x = -5000
-			self.ids.artistscroller.pos_hint = {'x': -2, 'y':0}
-			self.ids.albumscroller.pos_hint = {'x': -2, 'y':0}
-			self.ids.showbrowser.x = 0
-			self.hidden = True
+
+	# def movebrowser(self):
+		# if self.hidden == True:
+			# self.album_art.pos_hint = {'y':0.,"x":0.2}
+			# self.ids.hiddeninfo.pos_hint = {'y':-2,"x":0}
+			# self.browsermove.x = 0
+			# if self.level =='artist':
+				# self.ids.artistscroller.pos_hint = {'x':0}
+			# else:
+				# self.ids.albumscroller.pos_hint = {'x':0}
+			# self.ids.showbrowser.x = -100
+			# self.hidden = False
+		# else:
+			# self.album_art.pos_hint = {'y':0,"x":-.2}
+			# self.ids.hiddeninfo.pos_hint = {"x": 0.49, 'y': 0.1}
+			# self.browsermove.x = -5000
+			# self.ids.artistscroller.pos_hint = {'x': -2, 'y':0}
+			# self.ids.albumscroller.pos_hint = {'x': -2, 'y':0}
+			# self.ids.showbrowser.x = 0
+			# self.hidden = True
 
 	def refresh_scrollviewbrowser(self):
 		for x in self.artistlist:
@@ -405,61 +360,51 @@ class MainThread(AnchorLayout):
 		self.scrollviewbrowser()
 
 
-	def scrollviewbrowser(self,*args):
-		lastalbum = ''
-		if self.level=='artist':
-			if self.hidden == True:
-				pass
-			else:
-				if self.artistlistbool == True:
-					self.ids.artistscroller.pos_hint = {"x": 0}
-					self.ids.albumscroller.pos_hint = {"x": -2}
-				else:
-					self.ids.artistscroller.pos_hint = {"x": 0}
-					self.ids.albumscroller.pos_hint = {"x": -2}
-					for x in table.distinct('artist'):
-						btn = Button(id=unicode(x['artist']),text=unicode(x['artist']), size_hint_y=None, font_size=17, height=50)
-						btn.bind(on_press=self.browser)
-						self.artistlist.append(btn)
-						self.ids.scroller1.add_widget(btn)
-					self.artistlistbool = True
+	# def scrollviewbrowser(self,*args):
+		# lastalbum = ''
+		# if self.level=='artist':
+			# if self.hidden == True:
+				# pass
+			# else:
+				# if self.artistlistbool == True:
+					# self.ids.artistscroller.pos_hint = {"x": 0}
+					# self.ids.albumscroller.pos_hint = {"x": -2}
+				# else:
+					# self.ids.artistscroller.pos_hint = {"x": 0}
+					# self.ids.albumscroller.pos_hint = {"x": -2}
+					# for x in table.distinct('artist'):
+						# btn = Button(id=unicode(x['artist']),text=unicode(x['artist']), size_hint_y=None, font_size=17, height=50)
+						# btn.bind(on_press=self.browser)
+						# self.artistlist.append(btn)
+						# self.ids.scroller1.add_widget(btn)
+					# self.artistlistbool = True
 
-		elif self.level=='album':
-			for x in self.buttonlist:
-				self.ids.scroller2.remove_widget(x)
-			self.ids.artistscroller.pos_hint = {"x": -2}
-			self.ids.albumscroller.pos_hint = {"x": 0}
-			for x in table.find(artist=self.artist):
-				if x['album'] == lastalbum:
-					pass
-				else:
-					btn = Button(text=unicode(x['album']),size_hint_y=None, font_size=17, height=50)
-					btn.bind(on_press=self.browser)
-					self.buttonlist.append(btn)
-					self.ids.scroller2.add_widget(btn)
-					lastalbum = x['album']
-					
-		elif self.level=='title':
-			for x in self.buttonlist:
-				self.ids.scroller2.remove_widget(x)
-			self.ids.artistscroller.pos_hint = {"x": -2}
-			self.ids.albumscroller.pos_hint = {"x": 0}
-			for x in table.find(artist=self.artist,album=self.album):
-				btn = Button(text=unicode(x['title']), size_hint_y=None, font_size=17, height=50)
-				btn.bind(on_press=self.browser)
-				self.buttonlist.append(btn)
-				self.ids.scroller2.add_widget(btn)
+		# elif self.level=='album':
+			# for x in self.buttonlist:
+				# self.ids.scroller2.remove_widget(x)
+			# self.ids.artistscroller.pos_hint = {"x": -2}
+			# self.ids.albumscroller.pos_hint = {"x": 0}
+			# for x in table.find(artist=self.artist):
+				# if x['album'] == lastalbum:
+					# pass
+				# else:
+					# btn = Button(text=unicode(x['album']),size_hint_y=None, font_size=17, height=50)
+					# btn.bind(on_press=self.browser)
+					# self.buttonlist.append(btn)
+					# self.ids.scroller2.add_widget(btn)
+					# lastalbum = x['album']
 
-	def camsetup(self):
-		from kivy.uix.camera import Camera
-		for x in range(0,2):
-			try:
-				self.ids['camera'].index = x
-			except:
-				print ("failed {0}".format(x))
-				
-	def startusb(self):
-		audio.connect('22b8','2ea4')
+		# elif self.level=='title':
+			# for x in self.buttonlist:
+				# self.ids.scroller2.remove_widget(x)
+			# self.ids.artistscroller.pos_hint = {"x": -2}
+			# self.ids.albumscroller.pos_hint = {"x": 0}
+			# for x in table.find(artist=self.artist,album=self.album):
+				# btn = Button(text=unicode(x['title']), size_hint_y=None, font_size=17, height=50)
+				# btn.bind(on_press=self.browser)
+				# self.buttonlist.append(btn)
+				# self.ids.scroller2.add_widget(btn)
+
 
 	def filesearcher():
 		for root, directories, filenames in os.walk(str(MusicDirectory)):
@@ -472,7 +417,7 @@ class MainThread(AnchorLayout):
 							pass
 						else:
 							print ("passing to filetagger", filename)
-							tagger.filetagger(root,filename)							
+							tagger.filetagger(root,filename)
 	filesearcher()
 
 	splash=0
@@ -480,27 +425,19 @@ class MainThread(AnchorLayout):
 #_______________________________#MAIN APP#______________________________
 
 class MainApp(App):
-	
-	
+
+
 	def build(self):
 		self.icon = 'music.png'
 		sc1 = Scroller1()
 		sc2 = Scroller2()
-		gps = CenterGPS()
-		zoom = Zoom()
 		bigscreeninfo = BigScreenInfo()
-		show = Show()
-		browser = Browser()
 		volumeslider = VolumeSlider()
 		playbuttons = PlayButtons()
 		build = Builder.load_file('carputer.ky')
 		build.add_widget(playbuttons)
 		build.add_widget(volumeslider)
-		build.add_widget(browser)
-		build.add_widget(show)
 		build.add_widget(bigscreeninfo)
-		build.add_widget(zoom)
-		build.add_widget(gps)
 		build.add_widget(sc1)
 		build.add_widget(sc2)
 		return build
@@ -510,5 +447,3 @@ class MainApp(App):
 
 if __name__ == "__main__":
 	MainApp().run()
-
-
