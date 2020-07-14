@@ -95,7 +95,7 @@ MainThread:
 							font_size: 20
 
 
-      SettingsScreen:
+			SettingsScreen:
 				name: 'settings'
 				Button:
 					size_hint: 0.05, 0.1
