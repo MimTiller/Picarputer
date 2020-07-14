@@ -94,6 +94,7 @@ MainThread:
 							halign: 'center'
 							font_size: 20
 
+
       SettingsScreen:
 				name: 'settings'
 				Button:
