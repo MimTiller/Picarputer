@@ -93,9 +93,15 @@ MainThread:
 							size: self.texture_size
 							halign: 'center'
 							font_size: 20
+<<<<<<< HEAD
 
 
 
+=======
+
+
+
+>>>>>>> 239d2941ee0f5f935a6874e439d57884e6f459b8
 			SettingsScreen:
 				name: 'settings'
 				Button:
@@ -218,7 +224,11 @@ MainThread:
 								keep_ratio: False
 						BoxLayout:
 							orientation: 'vertical'
+<<<<<<< HEAD
 							size_hint: 0.045, 1
+=======
+							size_hint: 0.04, 1
+>>>>>>> 239d2941ee0f5f935a6874e439d57884e6f459b8
 							Button:
 								background_color:(0.9, 0.9, 0.9, 0.0)
 							Button:
@@ -252,8 +262,11 @@ MainThread:
 								Slider:
 									id: slider
 									size_hint: 1, 0.35
+<<<<<<< HEAD
 									cursor_size: 20, 20
 
+=======
+>>>>>>> 239d2941ee0f5f935a6874e439d57884e6f459b8
 							Button:
 								id: songlength
 								size_hint: 0.06,1
