@@ -108,7 +108,7 @@ class MainThread(AnchorLayout):
 	player.set_media(media)
 	player = vlc.MediaPlayer("/path/to/file.flac")
 	splash = int(1)
-
+	
 
 	def __init__(self, **kwargs):
 		super(MainThread ,self).__init__(**kwargs)
@@ -228,6 +228,7 @@ class MainThread(AnchorLayout):
 		self.songinfoupdate(song)
 		self.slider_max(song)
 		self.browser("refresh")
+		self.cpu_counter()
 		try:
 			self.album_art.source=art
 		except:
@@ -356,11 +357,11 @@ class MainThread(AnchorLayout):
 			# self.ids.showbrowser.x = 0
 			# self.hidden = True
 
-	def refresh_scrollviewbrowser(self):
-		for x in self.artistlist:
-			self.ids.scroller1.remove_widget(x)
-		self.artistlistbool=False
-		self.scrollviewbrowser()
+	# def refresh_scrollviewbrowser(self):
+		# for x in self.artistlist:
+			# self.ids.scroller1.remove_widget(x)
+		# self.artistlistbool=False
+		# self.scrollviewbrowser()
 
 
 	# def scrollviewbrowser(self,*args):
@@ -423,11 +424,12 @@ class MainThread(AnchorLayout):
 							# tagger.filetagger(root,filename)
 	# filesearcher()
 	def perf_counter(self):
-		cpu = psutil.cpu_percent()
-		RAM = psutil.virtual_memory()
-		RAMpc = psutil.virtual_memory().percent
-		return([cpu,RAM,RAMpc])
-	splash=1
+		print("perf counter is running")
+		self.ids.CPU.text = psutil.cpu_percent()
+		self.ids.RAM.text = psutil.virtual_memory()
+		self.ids.RAMpc.text = psutil.virtual_memory().percent
+
+	splash=0
 
 #_______________________________#MAIN APP#______________________________
 

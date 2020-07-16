@@ -111,19 +111,6 @@ MainThread:
 						center_y: self.parent.center_y
 						size: 80, 80
 						allow_stretch: True
-			PerfScreen:
-				name: 'perf'
-				Button:
-					name: 'CPU'
-					size_hint: 0.3, 1
-
-				Button:
-					name: 'RAM Percent'
-					size_hint: 0.3, 1
-
-				Button:
-					name: 'RAM'
-					size_hint: 0.3, 1
 
 
 			OBDIIScreen:
@@ -143,7 +130,23 @@ MainThread:
 						id: speed
 					Button:
 						id: satellites
+						
+			PerfScreen:
+				name: 'perf'
+				BoxLayout:
 
+					Button:
+						name: 'CPU'
+						text: "CPU"
+						size_hint: 0.3, 1
+						on_release: root.perf_counter()
+					Button:
+						name: 'RAMpc'
+						size_hint: 0.3, 1
+
+					Button:
+						name: 'RAM'
+						size_hint: 0.3, 1
 
 
 
