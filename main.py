@@ -82,6 +82,8 @@ class SettingsScreen(Screen):
     pass
 class OBDIIScreen(Screen):
 	pass
+class PerfScreen(Screen):
+	pass
 class Root(Screen):
 	pass
 class VolumeSlider(BoxLayout):
@@ -407,21 +409,25 @@ class MainThread(AnchorLayout):
 				# self.ids.scroller2.add_widget(btn)
 
 
-	def filesearcher():
-		for root, directories, filenames in os.walk(str(MusicDirectory)):
-			for filename in filenames:
-				ext = [".mp3",".m4a",".flac"]
-				for x in ext:
-					if filename.endswith(x):
-						location = os.path.join(root,filename)
-						if table.find_one(location=location):
-							pass
-						else:
-							print ("passing to filetagger", filename)
-							tagger.filetagger(root,filename)
-	filesearcher()
-
-	splash=0
+	# def filesearcher():
+		# for root, directories, filenames in os.walk(str(MusicDirectory)):
+			# for filename in filenames:
+				# ext = [".mp3",".m4a",".flac"]
+				# for x in ext:
+					# if filename.endswith(x):
+						# location = os.path.join(root,filename)
+						# if table.find_one(location=location):
+							# pass
+						# else:
+							# print ("passing to filetagger", filename)
+							# tagger.filetagger(root,filename)
+	# filesearcher()
+	def perf_counter(self):
+		cpu = psutil.cpu_percent()
+		RAM = psutil.virtual_memory()
+		RAMpc = psutil.virtual_memory().percent
+		return([cpu,RAM,RAMpc])
+	splash=1
 
 #_______________________________#MAIN APP#______________________________
 

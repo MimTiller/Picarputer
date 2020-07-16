@@ -111,6 +111,20 @@ MainThread:
 						center_y: self.parent.center_y
 						size: 80, 80
 						allow_stretch: True
+			PerfScreen:
+				name: 'perf'
+				Button:
+					name: 'CPU'
+					size_hint: 0.3, 1
+
+				Button:
+					name: 'RAM Percent'
+					size_hint: 0.3, 1
+
+				Button:
+					name: 'RAM'
+					size_hint: 0.3, 1
+
 
 			OBDIIScreen:
 				name: 'obd'
@@ -167,7 +181,9 @@ MainThread:
 						on_release: st.current= 'obd'
 						text: "OBDII"
 
-
+					Button: #PerfScreen
+						on_release: st.current= 'perf'
+						text: "PERFORMANCE"
 
 			PlayButtons:
 				anchor_x: 'center'
