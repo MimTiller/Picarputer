@@ -1,7 +1,4 @@
  #!/usr/bin/python
-
-
-
 #kivy imports
 
 from kivy.app import App
@@ -90,7 +87,6 @@ class VolumeSlider(BoxLayout):
 	pass
 class PlayButtons(AnchorLayout):
 	pass
-
 class Scroller1(FloatLayout):
 	pass
 class Scroller2(FloatLayout):
@@ -108,7 +104,7 @@ class MainThread(AnchorLayout):
 	player.set_media(media)
 	player = vlc.MediaPlayer("/path/to/file.flac")
 	splash = int(1)
-	
+
 
 	def __init__(self, **kwargs):
 		super(MainThread ,self).__init__(**kwargs)
@@ -116,15 +112,11 @@ class MainThread(AnchorLayout):
 		self.buttonlist=[]
 		self.artistlist=[]
 		self.artistlistbool = False
-		self.latitude = 41.257160
-		self.longitude = -95.995102
 		self.level = "artist"
 		self.notshuffled = []
 		self.num = 0
 		self.shuffle = True
 		self.dir_num = 13
-		self.hidden = False
-		self.car_follow = False
 		self.artist_loaded = False
 		self.artist = ''
 		self.album = ''
@@ -257,7 +249,7 @@ class MainThread(AnchorLayout):
 			print ("{0} ended".format(self.title))
 			self.level = 'artist'
 			self.next_button()
-
+		self.perf_counter()
 
 	# def browser(self,instance):
 		# if instance == "back":
@@ -336,6 +328,10 @@ class MainThread(AnchorLayout):
 		self.ids.bigscreenartist.text = artist
 		self.ids.bigscreentitle.text = title
 		self.ids.bigscreenalbum.text = album
+	def perf_counter(self):
+		self.ids.CPU.text = "CPU: " + str(psutil.cpu_percent())
+		self.ids.RAMpc.text = "RAM Used: " + str(psutil.virtual_memory().percent) + "%"
+		self.ids.RAM.text = "Available RAM: " + str(round(psutil.virtual_memory().total/1024/1024/1024, 2)) + "GB"
 
 	# def movebrowser(self):
 		# if self.hidden == True:
@@ -423,18 +419,13 @@ class MainThread(AnchorLayout):
 							# print ("passing to filetagger", filename)
 							# tagger.filetagger(root,filename)
 	# filesearcher()
-	def perf_counter(self):
-		print("perf counter is running")
-		self.ids.CPU.text = psutil.cpu_percent()
-		self.ids.RAM.text = psutil.virtual_memory()
-		self.ids.RAMpc.text = psutil.virtual_memory().percent
+
 
 	splash=0
 
 #_______________________________#MAIN APP#______________________________
 
 class MainApp(App):
-
 
 	def build(self):
 		self.icon = 'music.png'
@@ -443,7 +434,9 @@ class MainApp(App):
 		bigscreeninfo = BigScreenInfo()
 		volumeslider = VolumeSlider()
 		playbuttons = PlayButtons()
+
 		build = Builder.load_file('carputer.ky')
+
 		build.add_widget(playbuttons)
 		build.add_widget(volumeslider)
 		build.add_widget(bigscreeninfo)

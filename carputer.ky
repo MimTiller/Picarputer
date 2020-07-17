@@ -130,23 +130,21 @@ MainThread:
 						id: speed
 					Button:
 						id: satellites
-						
+
 			PerfScreen:
 				name: 'perf'
 				BoxLayout:
 
 					Button:
-						name: 'CPU'
-						text: "CPU"
-						size_hint: 0.3, 1
-						on_release: root.perf_counter()
+						id: CPU
+						size_hint: 0.33, 0.5
 					Button:
-						name: 'RAMpc'
-						size_hint: 0.3, 1
+						id: RAMpc
+						size_hint: 0.33, 0.5
 
 					Button:
-						name: 'RAM'
-						size_hint: 0.3, 1
+						id: RAM
+						size_hint: 0.33, 0.5
 
 
 
