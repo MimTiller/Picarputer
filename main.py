@@ -6,7 +6,7 @@ from kivy.animation import Animation
 from kivy.core.window import Window
 from kivy.config import Config
 from kivy.clock import Clock
-
+from kivy.garden.graph import MeshLinePlot
 #layouts
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
@@ -36,8 +36,8 @@ from random import shuffle
 from multiprocessing import Process
 import re, sys, os, random, threading, time, eyed3, mutagen, glob, dataset, usb, psutil
 from libs import tagger, audio, vlc
-
-
+from threading import Thread
+from collections import defaultdict
 
 
 #==================CONFIGURATION========================================#
@@ -66,7 +66,8 @@ playicon = 'data/icons/play.png'
 pauseicon = 'data/icons/pause.png'
 db = dataset.connect('sqlite:///songlist.db')
 table = db['songs']
-
+global graph
+graph = []
 
 #-----------------------------#KIVY#------------------------------------
 class ScreenManagement(ScreenManager):
@@ -108,7 +109,8 @@ class MainThread(AnchorLayout):
 
 	def __init__(self, **kwargs):
 		super(MainThread ,self).__init__(**kwargs)
-		Clock.schedule_interval(self.songpos_callback, screenupdatetime)
+		Clock.schedule_interval(self.refresh, screenupdatetime)
+		Clock.schedule_once(self.start_thread,0)
 		self.buttonlist=[]
 		self.artistlist=[]
 		self.artistlistbool = False
@@ -142,8 +144,6 @@ class MainThread(AnchorLayout):
 			print ("[playpause] resuming")
 			self.ids.playpausebutton.source = pauseicon
 			self.player.play()
-
-
 
 	def shuffleicon(self):
 		shuffleon = 'data/icons/shuffle_on.png'
@@ -226,10 +226,7 @@ class MainThread(AnchorLayout):
 		except:
 			self.album_art.source='data/icons/unknown.png'
 
-
-
-
-	def songpos_callback(self, dt):										#called every time specified in the configuration
+	def refresh(self, dt):										#called every time specified in the configuration
 		state = str(self.player.get_state())
 		duration = int(self.player.get_length()/1000)
 		position = int(self.player.get_time()/1000)
@@ -238,45 +235,21 @@ class MainThread(AnchorLayout):
 		m, s = divmod(position, 60) 									#change time from seconds to minutes and seconds
 		if s < 10:
 			s = '%02d' %s
-		self.ids.songpos.text = "{0}:{1}".format(m, s) 					#update song position text
-		remainder = duration - int(position)
-		m, s = divmod(remainder, 60)
-		if s < 10:
-			s = '%02d' %s
-		self.ids.songlength.text = "{0}:{1}".format(m, s)				#update remaining time left on song
-		self.slider.value = position / screenupdatetime					#update slider
-		if state == "State.Ended":
-			print ("{0} ended".format(self.title))
-			self.level = 'artist'
-			self.next_button()
-		self.perf_counter()
-
-	# def browser(self,instance):
-		# if instance == "back":
-			# if self.level == "artist":
-				# self.scrollviewbrowser()
-			# elif self.level == "album":
-				# self.level = "artist"
-				# self.scrollviewbrowser()
-			# elif self.level == "title":
-				# self.level = "album"
-				# self.scrollviewbrowser()
-
-		# elif instance == "refresh":
-			# self.scrollviewbrowser()
-
-		# else:
-			# if self.level == "artist":
-				# self.level = "album"
-				# self.artist = instance.text
-				# self.scrollviewbrowser()
-			# elif self.level == "album":
-				# self.level = "title"
-				# self.album = instance.text
-				# self.scrollviewbrowser()
-			# elif self.level == "title":
-				# self.title = instance.text
-				# self.play_title(self.artist,self.album,self.title)
+		try:
+			self.ids.songpos.text = "{0}:{1}".format(m, s) 					#update song position text
+			remainder = duration - int(position)
+			m, s = divmod(remainder, 60)
+			if s < 10:
+				s = '%02d' %s
+			self.ids.songlength.text = "{0}:{1}".format(m, s)				#update remaining time left on song
+			self.slider.value = position / screenupdatetime					#update slider
+			if state == "State.Ended":
+				print ("{0} ended".format(self.title))
+				self.level = 'artist'
+				self.next_button()
+			self.perf_counter()
+		except:
+			pass
 
 
 
@@ -328,101 +301,42 @@ class MainThread(AnchorLayout):
 		self.ids.bigscreenartist.text = artist
 		self.ids.bigscreentitle.text = title
 		self.ids.bigscreenalbum.text = album
+
 	def perf_counter(self):
 		self.ids.CPU.text = "CPU: " + str(psutil.cpu_percent())
 		self.ids.RAMpc.text = "RAM Used: " + str(psutil.virtual_memory().percent) + "%"
 		self.ids.RAM.text = "Available RAM: " + str(round(psutil.virtual_memory().total/1024/1024/1024, 2)) + "GB"
 
-	# def movebrowser(self):
-		# if self.hidden == True:
-			# self.album_art.pos_hint = {'y':0.,"x":0.2}
-			# self.ids.hiddeninfo.pos_hint = {'y':-2,"x":0}
-			# self.browsermove.x = 0
-			# if self.level =='artist':
-				# self.ids.artistscroller.pos_hint = {'x':0}
-			# else:
-				# self.ids.albumscroller.pos_hint = {'x':0}
-			# self.ids.showbrowser.x = -100
-			# self.hidden = False
-		# else:
-			# self.album_art.pos_hint = {'y':0,"x":-.2}
-			# self.ids.hiddeninfo.pos_hint = {"x": 0.49, 'y': 0.1}
-			# self.browsermove.x = -5000
-			# self.ids.artistscroller.pos_hint = {'x': -2, 'y':0}
-			# self.ids.albumscroller.pos_hint = {'x': -2, 'y':0}
-			# self.ids.showbrowser.x = 0
-			# self.hidden = True
-
-	# def refresh_scrollviewbrowser(self):
-		# for x in self.artistlist:
-			# self.ids.scroller1.remove_widget(x)
-		# self.artistlistbool=False
-		# self.scrollviewbrowser()
-
-
-	# def scrollviewbrowser(self,*args):
-		# lastalbum = ''
-		# if self.level=='artist':
-			# if self.hidden == True:
-				# pass
-			# else:
-				# if self.artistlistbool == True:
-					# self.ids.artistscroller.pos_hint = {"x": 0}
-					# self.ids.albumscroller.pos_hint = {"x": -2}
-				# else:
-					# self.ids.artistscroller.pos_hint = {"x": 0}
-					# self.ids.albumscroller.pos_hint = {"x": -2}
-					# for x in table.distinct('artist'):
-						# btn = Button(id=unicode(x['artist']),text=unicode(x['artist']), size_hint_y=None, font_size=17, height=50)
-						# btn.bind(on_press=self.browser)
-						# self.artistlist.append(btn)
-						# self.ids.scroller1.add_widget(btn)
-					# self.artistlistbool = True
-
-		# elif self.level=='album':
-			# for x in self.buttonlist:
-				# self.ids.scroller2.remove_widget(x)
-			# self.ids.artistscroller.pos_hint = {"x": -2}
-			# self.ids.albumscroller.pos_hint = {"x": 0}
-			# for x in table.find(artist=self.artist):
-				# if x['album'] == lastalbum:
-					# pass
-				# else:
-					# btn = Button(text=unicode(x['album']),size_hint_y=None, font_size=17, height=50)
-					# btn.bind(on_press=self.browser)
-					# self.buttonlist.append(btn)
-					# self.ids.scroller2.add_widget(btn)
-					# lastalbum = x['album']
-
-		# elif self.level=='title':
-			# for x in self.buttonlist:
-				# self.ids.scroller2.remove_widget(x)
-			# self.ids.artistscroller.pos_hint = {"x": -2}
-			# self.ids.albumscroller.pos_hint = {"x": 0}
-			# for x in table.find(artist=self.artist,album=self.album):
-				# btn = Button(text=unicode(x['title']), size_hint_y=None, font_size=17, height=50)
-				# btn.bind(on_press=self.browser)
-				# self.buttonlist.append(btn)
-				# self.ids.scroller2.add_widget(btn)
-
-
-	# def filesearcher():
-		# for root, directories, filenames in os.walk(str(MusicDirectory)):
-			# for filename in filenames:
-				# ext = [".mp3",".m4a",".flac"]
-				# for x in ext:
-					# if filename.endswith(x):
-						# location = os.path.join(root,filename)
-						# if table.find_one(location=location):
-							# pass
-						# else:
-							# print ("passing to filetagger", filename)
-							# tagger.filetagger(root,filename)
-	# filesearcher()
-
 
 	splash=0
+	def perf_graph(self):
+		global graph
+		cpuplot= MeshLinePlot(color=[1,0.0,1])
+		RAMplot= MeshLinePlot(color=[0,0.1,1])
+		while True:
+			for key in ['cpu','RAMpc']:
+				if len(graph[key])>= 100:
+					graph[key] = []
+						#print (plot)
+						#self.cpugraph.remove_plot(plot)
+			graph['cpu'].append(int(psutil.cpu_percent()))
+			graph['RAMpc'].append(psutil.virtual_memory().percent)
+			RAMplot.points = [(i, j) for i, j in enumerate(graph['RAMpc'])]
+			cpuplot.points = [(i, j) for i, j in enumerate(graph['cpu'])]
+			self.ramgraph.add_plot(RAMplot)
+			self.cpugraph.add_plot(cpuplot)
 
+			#print (graph['cpu'])
+			time.sleep(0.6)
+
+
+
+	def start_thread(self,dt):
+		global graph
+		graph = defaultdict(list)
+		graphdaemon = Thread(target = self.perf_graph)
+		graphdaemon.daemon = True
+		graphdaemon.start()
 #_______________________________#MAIN APP#______________________________
 
 class MainApp(App):
@@ -434,9 +348,7 @@ class MainApp(App):
 		bigscreeninfo = BigScreenInfo()
 		volumeslider = VolumeSlider()
 		playbuttons = PlayButtons()
-
 		build = Builder.load_file('carputer.ky')
-
 		build.add_widget(playbuttons)
 		build.add_widget(volumeslider)
 		build.add_widget(bigscreeninfo)

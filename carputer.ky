@@ -1,9 +1,12 @@
 #:import SlideTransition kivy.uix.screenmanager.SlideTransition
-
+#:import MeshLinePlot kivy.garden.graph.MeshLinePlot
 
 MainThread:
 	album_art:album_art
 	slider:slider
+	cpugraph:cpugraph
+	ramgraph:ramgraph
+
 
 	canvas.after:
 		Color:
@@ -134,17 +137,29 @@ MainThread:
 			PerfScreen:
 				name: 'perf'
 				BoxLayout:
+					orientation: 'vertical'
+					BoxLayout:
+						size_hint: 0.66, 1
+						Graph:
+							size_hint: 0.33, 1
+							id: cpugraph
+						Graph:
+							size_hint: 0.33, 1
+							id: ramgraph
+					BoxLayout:
+						Button:
+							id: CPU
+							size_hint: 0.33, 1
+						Button:
+							id: RAMpc
+							size_hint: 0.33, 1
 
-					Button:
-						id: CPU
-						size_hint: 0.33, 0.5
-					Button:
-						id: RAMpc
-						size_hint: 0.33, 0.5
+						Button:
+							id: RAM
+							size_hint: 0.33, 1
 
-					Button:
-						id: RAM
-						size_hint: 0.33, 0.5
+
+
 
 
 
