@@ -180,11 +180,21 @@ MainThread:
 
 					Button: #OBDII button
 						on_release: st.current= 'obd'
-						text: "OBDII"
+						Image:
+							source: 'data/icons/obd2.png'
+							center_x: self.parent.center_x
+							center_y: self.parent.center_y
+							size: 60, 60
+							allow_stretch: True
 
 					Button: #PerfScreen
 						on_release: st.current= 'perf'
-						text: "PERFORMANCE"
+						Image:
+							source: 'data/icons/perf.png'
+							center_x: self.parent.center_x
+							center_y: self.parent.center_y
+							size: 60, 60
+							allow_stretch: True
 
 			PlayButtons:
 				anchor_x: 'center'
