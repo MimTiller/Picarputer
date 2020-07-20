@@ -1,1 +1,3 @@
 *.pyc
+config.ini
+libs/__pycache__
