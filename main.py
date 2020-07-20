@@ -6,7 +6,7 @@ from kivy.animation import Animation
 from kivy.core.window import Window
 from kivy.config import Config
 from kivy.clock import Clock
-from kivy.garden.graph import MeshLinePlot
+from kivy.garden.graph import MeshLinePlot, SmoothLinePlot
 #layouts
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
@@ -16,29 +16,30 @@ from kivy.uix.anchorlayout import AnchorLayout
 #widgets
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.button import Button
+from kivy.uix.dropdown import DropDown
 from kivy.uix.image import Image
 from kivy.uix.slider import Slider
 from kivy.uix.widget import Widget
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.label import Label
-
+from kivy.uix.spinner import Spinner
 #misc
 
 from kivy.logger import Logger
 from kivy.lang import Builder
 from kivy.properties import NumericProperty, StringProperty, BooleanProperty, ListProperty, ObjectProperty
 from kivy.uix.screenmanager import ScreenManager, Screen, NoTransition, SlideTransition, SwapTransition, FadeTransition, WipeTransition, FallOutTransition, RiseInTransition
-
-
+from kivy.utils import get_color_from_hex as rgb
+from kivy.graphics import *
 #non kivy imports
 from time import time
 from random import shuffle
 from multiprocessing import Process
 import re, sys, os, random, threading, time, eyed3, mutagen, glob, dataset, usb, psutil
-from libs import tagger, audio, vlc
+from libs import tagger, audio, vlc, bluetooth
 from threading import Thread
 from collections import defaultdict
-
+from os import path
 
 #==================CONFIGURATION========================================#
 Window.fullscreen = False												#Fullscrean Boolean
@@ -95,8 +96,6 @@ class Scroller2(FloatLayout):
 class BigScreenInfo(BoxLayout):
 	pass
 
-
-
 #-----------------------MAIN-FUNCTIONS---------------------------------#
 class MainThread(AnchorLayout):
 	instance = vlc.Instance()
@@ -111,18 +110,60 @@ class MainThread(AnchorLayout):
 		super(MainThread ,self).__init__(**kwargs)
 		Clock.schedule_interval(self.refresh, screenupdatetime)
 		Clock.schedule_once(self.start_thread,0)
-		self.buttonlist=[]
-		self.artistlist=[]
-		self.artistlistbool = False
-		self.level = "artist"
+
+		#self.buttonlist=[]
+		#self.artistlist=[]
+		#self.artistlistbool = False
+		#self.level = "artist"
 		self.notshuffled = []
 		self.num = 0
 		self.shuffle = True
-		self.dir_num = 13
-		self.artist_loaded = False
+		#self.dir_num = 13
+		#self.artist_loaded = False
 		self.artist = ''
 		self.album = ''
 		self.title = ''
+		self.wallpaper = 'data/wallpapers/blackbox.jpg'
+		#self.splash = 1
+		self.wallpaperlist = ListProperty()
+		self.currentscreen = 1
+
+	def slide_screen(self,instance,screenname):
+		if instance > self.currentscreen:
+			self.ids.st.transition = SlideTransition(direction="left")
+			self.currentscreen = instance
+		elif instance < self.currentscreen:
+			self.ids.st.transition = SlideTransition(direction="right")
+			self.currentscreen = instance
+		else:
+			pass
+		self.ids.st.current = screenname
+
+
+
+	def get_wallpapers(self):
+		cwd = os.getcwd() + "\\data\\wallpapers"
+
+		self.wallpaperlist = [f for f in os.listdir(cwd)]
+
+		#self.ids.wpspinner.text = files[0]
+		#print (files[0])
+		#self.ids.wpspinner.bind(text = self.on_spinner_select)
+		return self.wallpaperlist
+
+
+	def on_spinner_select(self,spinner,text):
+		#text = self.ids.wpspinner.text
+
+		wp = 'data/wallpapers/' + text
+		self.ids.wpspinner.text_autoupdate = BooleanProperty(True)
+		wpfile = os.getcwd() + "\\data\\wallpapers\\{}".format(text)
+		print (wpfile)
+		if os.path.isfile(wpfile):
+			with self.canvas.before:
+				Rectangle(size=self.size,pos=self.pos,source=wp)
+		else:
+			print (wp + " is not a valid background image")
 
 
 	def playpause(self):
@@ -247,7 +288,7 @@ class MainThread(AnchorLayout):
 				print ("{0} ended".format(self.title))
 				self.level = 'artist'
 				self.next_button()
-			self.perf_counter()
+
 		except:
 			pass
 
@@ -286,8 +327,8 @@ class MainThread(AnchorLayout):
 		self.player.audio_set_volume(int(startupvolume))
 		return int(self.player.audio_get_volume())
 
-
-	def songinfoupdate(self, song):										#take song, look up file in database, extract artist album, and title
+	#take song, look up file in database, extract artist album, and title
+	def songinfoupdate(self, song):
 		for x in table.find(location = song):
 			artist = str(x['artist'])
 			album = str(x['album'])
@@ -295,28 +336,36 @@ class MainThread(AnchorLayout):
 			bitrate = str(x['bitrate'])
 			size = str(x['size'])
 			track = str(x['track'])
+			#if the song is over 30 characters, limit it
 			if len(artist) > 30:
 				artist = (artist[:30] + '...')
+		#update bigscreen info
 		self.ids.songinformation.text = "{0}  --  {1}".format(artist,title)
 		self.ids.bigscreenartist.text = artist
 		self.ids.bigscreentitle.text = title
 		self.ids.bigscreenalbum.text = album
 
 	def perf_counter(self):
-		self.ids.CPU.text = "CPU: " + str(psutil.cpu_percent())
+		self.ids.CPU.text = "CPU: " + str(psutil.cpu_percent()) + "%"
 		self.ids.RAMpc.text = "RAM Used: " + str(psutil.virtual_memory().percent) + "%"
-		self.ids.RAM.text = "Available RAM: " + str(round(psutil.virtual_memory().total/1024/1024/1024, 2)) + "GB"
+		self.ids.RAM.text = ": " + str(round(psutil.virtual_memory().total/1024/1024/1024, 2)) + "GB"
 
 
-	splash=0
+
 	def perf_graph(self):
 		global graph
-		cpuplot= MeshLinePlot(color=[1,0.0,1])
-		RAMplot= MeshLinePlot(color=[0,0.1,1])
+		cpugraph = self.cpugraph
+		cpuplot= MeshLinePlot(color=[1,0,1])
+
+		ramgraph = self.ramgraph
+		RAMplot= MeshLinePlot(color=[0,1,0])
+
 		while True:
 			for key in ['cpu','RAMpc']:
 				if len(graph[key])>= 100:
-					graph[key] = []
+					del graph[key][0]
+					if len(graph[key])>= 100:
+						del graph[key][0]
 						#print (plot)
 						#self.cpugraph.remove_plot(plot)
 			graph['cpu'].append(int(psutil.cpu_percent()))
@@ -328,7 +377,6 @@ class MainThread(AnchorLayout):
 
 			#print (graph['cpu'])
 			time.sleep(0.6)
-
 
 
 	def start_thread(self,dt):

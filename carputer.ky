@@ -8,13 +8,15 @@ MainThread:
 	ramgraph:ramgraph
 
 
-	canvas.after:
+
+	canvas.before:
 		Color:
-			rgba:(1,1,1,root.splash)
+			rgba:(1,1,1,1)
 		Rectangle:
+			id: wallpaper
 			pos: self.pos
 			size: self.size
-			source: 'carputer.jpg'
+			source: root.wallpaper
 	AnchorLayout:
 		anchor_x: 'center'
 		anchor_y: 'center'
@@ -27,13 +29,6 @@ MainThread:
 
 			MusicScreen:
 				name: 'music'
-				Image:
-					id: musicscreenbackground
-					source:'data/wallpapers/blackbox.jpg'
-					allow_stretch: True
-					keep_ratio: False
-
-
 				Scroller1:
 					size_hint: 0.4, 0.915
 					id: artistscroller
@@ -72,7 +67,7 @@ MainThread:
 				BigScreenInfo:
 					id: hiddeninfo
 					size_hint: 0.455, 0.75
-					pos_hint: {"x": -1, 'y': 0.0}
+					pos_hint: {"x": 0, 'y': 0.0}
 					BoxLayout:
 						orientation: 'vertical'
 
@@ -98,24 +93,6 @@ MainThread:
 							font_size: 20
 
 
-			SettingsScreen:
-				name: 'settings'
-				Button:
-					size_hint: 0.05, 0.1
-					on_release: print (root.player.get_state())
-				Button:
-					background_color: 0, 0, 0, 0
-					size_hint: 0.05,0.1
-					pos_hint: {"x": 0.9, 'y':0.88}
-					on_release: app.stop()
-					Image:
-						source:'data/icons/power.png'
-						center_x: self.parent.center_x
-						center_y: self.parent.center_y
-						size: 80, 80
-						allow_stretch: True
-
-
 			OBDIIScreen:
 				name: 'obd'
 				BoxLayout:
@@ -133,37 +110,85 @@ MainThread:
 						id: speed
 					Button:
 						id: satellites
-
 			PerfScreen:
 				name: 'perf'
 				BoxLayout:
-					orientation: 'vertical'
+					size_hint: 0.96, 1
+					Graph:
+						size_hint: 0.24, 1
+						id: cpugraph
+					Graph:
+						size_hint: 0.24, 1
+						id: ramgraph
+					Graph:
+						size_hint: 0.24, 1
+						id: netupgraph
+					Graph:
+						size_hint: 0.24, 1
+						id: netdowngraph
+				BoxLayout:
+					Button:
+						id: CPU
+						size_hint: 0.22, 1
+						background_color: 0, 0, 0, 0
+					Button:
+						id: RAMpc
+						size_hint: 0.22, 1
+						background_color: 0, 0, 0, 0
+					Button:
+						id: netup
+						size_hint: 0.22, 1
+						background_color: 0, 0, 0, 0
+					Button:
+						id: netdown
+						size_hint: 0.22, 1
+						background_color: 0, 0, 0, 0
+
+			SettingsScreen:
+				name: 'settings'
+				BoxLayout:
+					size_hint: 0.95,1
 					BoxLayout:
-						size_hint: 0.66, 1
-						Graph:
-							size_hint: 0.33, 1
-							id: cpugraph
-						Graph:
-							size_hint: 0.33, 1
-							id: ramgraph
+						orientation: 'vertical'
+						size_hint:0.08,1
+						Button:
+							background_color: 0, 0, 0, 0
+							on_release: app.stop()
+							Image:
+								source:'data/icons/power.png'
+								center_x: self.parent.center_x
+								center_y: self.parent.center_y
+								size: 80, 80
+								allow_stretch: True
 					BoxLayout:
+						orientation: 'vertical'
+						size_hint: 0.3,1
 						Button:
-							id: CPU
-							size_hint: 0.33, 1
+							text: "Wallpaper:"
 						Button:
-							id: RAMpc
-							size_hint: 0.33, 1
-
+							text: "Bluetooth:"
 						Button:
-							id: RAM
-							size_hint: 0.33, 1
+							text: "Startup Volume:"
+						Button:
+							text: "Startup Mode:"
+					BoxLayout:
+						orientation: 'vertical'
+						Spinner:
+							id: wpspinner
+							values: root.get_wallpapers()
+							text: self.values[0]
 
-
-
-
-
-
-
+							on_text: root.on_spinner_select(self,text=self.text)
+						Button:
+							text: "Bluetooth Devices"
+						BoxLayout:
+							Slider:
+								id: volumesetting
+							Button:
+								size_hint: 0.1,1
+								text: str(int(volumesetting.value))
+						Button:
+							text: "gai"
 		#Bottom Screen selectors
 		Menu:
 			AnchorLayout:
@@ -174,7 +199,9 @@ MainThread:
 					size_hint: 1, .12 #define percentage of screen for quickeys width,height
 
 					Button:  #music button
-						on_release: st.current = 'music'
+						name: 1
+						on_release:
+							root.slide_screen(self.name,"music")
 						Image:
 							source: 'data/icons/audio.png'
 							center_x: self.parent.center_x
@@ -183,18 +210,10 @@ MainThread:
 							allow_stretch: True
 
 
-					Button:  #settings button
-						on_release: st.current = 'settings'
-						pos_hint: {"x": 0.8, 'y':0}
-						Image:
-							source:'data/icons/settings.png'
-							center_x: self.parent.center_x
-							center_y: self.parent.center_y
-							size: 60, 60
-							allow_stretch: True
-
 					Button: #OBDII button
-						on_release: st.current= 'obd'
+						name: 2
+						on_release:
+							root.slide_screen(self.name,"obd")
 						Image:
 							source: 'data/icons/obd2.png'
 							center_x: self.parent.center_x
@@ -203,9 +222,21 @@ MainThread:
 							allow_stretch: True
 
 					Button: #PerfScreen
-						on_release: st.current= 'perf'
+						name: 3
+						on_release:
+							root.slide_screen(self.name,"perf")
 						Image:
 							source: 'data/icons/perf.png'
+							center_x: self.parent.center_x
+							center_y: self.parent.center_y
+							size: 60, 60
+							allow_stretch: True
+					Button:  #settings button
+						name: 4
+						on_release:
+							root.slide_screen(self.name,"settings")
+						Image:
+							source:'data/icons/settings.png'
 							center_x: self.parent.center_x
 							center_y: self.parent.center_y
 							size: 60, 60
@@ -216,6 +247,7 @@ MainThread:
 				anchor_y: 'top'
 				BoxLayout:
 					size_hint: 1, .085
+					pos_hint: {"x": 0, 'y':0.1}
 					orientation: 'vertical'
 					padding: 7,7,0,0
 					BoxLayout:
