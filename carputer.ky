@@ -177,10 +177,12 @@ MainThread:
 							id: wpspinner
 							values: root.get_wallpapers()
 							text: self.values[0]
-
 							on_text: root.on_spinner_select(self,text=self.text)
-						Button:
-							text: "Bluetooth Devices"
+						Spinner:
+							id: btspinner
+							values: root.get_bluetooth_devices()
+							text: "Click to Connect:"
+							on_text: root.on_spinner_select(self,text=self.text)
 						BoxLayout:
 							Slider:
 								id: volumesetting

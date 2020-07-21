@@ -36,11 +36,11 @@ from time import time
 from random import shuffle
 from multiprocessing import Process
 import re, sys, os, random, threading, time, eyed3, mutagen, glob, dataset, usb, psutil
-from libs import tagger, audio, vlc, bluetooth
+from libs import tagger, audio, vlc, btdevices
 from threading import Thread
 from collections import defaultdict
 from os import path
-
+import concurrent.futures
 #==================CONFIGURATION========================================#
 Window.fullscreen = False												#Fullscrean Boolean
 Window.size = 800,480 												    #Force a resolution, or just comment out
@@ -126,6 +126,7 @@ class MainThread(AnchorLayout):
 		self.wallpaper = 'data/wallpapers/blackbox.jpg'
 		#self.splash = 1
 		self.wallpaperlist = ListProperty()
+		self.result = ListProperty
 		self.currentscreen = 1
 
 	def slide_screen(self,instance,screenname):
@@ -139,13 +140,19 @@ class MainThread(AnchorLayout):
 			pass
 		self.ids.st.current = screenname
 
-
+	def get_bluetooth_devices(self):
+		with concurrent.futures.ThreadPoolExecutor() as executor:
+			future = executor.submit(btdevices.bluetooth_search)
+			self.result = future.result()
+			if self.result == []:
+				print ("No Devices Found")
+				self.result == ["None"]
+			print (self.result)
+			return self.result
 
 	def get_wallpapers(self):
 		cwd = os.getcwd() + "\\data\\wallpapers"
-
 		self.wallpaperlist = [f for f in os.listdir(cwd)]
-
 		#self.ids.wpspinner.text = files[0]
 		#print (files[0])
 		#self.ids.wpspinner.bind(text = self.on_spinner_select)
@@ -154,16 +161,19 @@ class MainThread(AnchorLayout):
 
 	def on_spinner_select(self,spinner,text):
 		#text = self.ids.wpspinner.text
-
-		wp = 'data/wallpapers/' + text
-		self.ids.wpspinner.text_autoupdate = BooleanProperty(True)
-		wpfile = os.getcwd() + "\\data\\wallpapers\\{}".format(text)
-		print (wpfile)
-		if os.path.isfile(wpfile):
-			with self.canvas.before:
-				Rectangle(size=self.size,pos=self.pos,source=wp)
+		self.ids.btspinner.text_autoupdate = BooleanProperty(True)
+		if text == "bluetooth":
+			print ("Yay you got the spinner to work")
 		else:
-			print (wp + " is not a valid background image")
+			wp = 'data/wallpapers/' + text
+			self.ids.wpspinner.text_autoupdate = BooleanProperty(True)
+			wpfile = os.getcwd() + "\\data\\wallpapers\\{}".format(text)
+			print (wpfile)
+			if os.path.isfile(wpfile):
+				with self.canvas.before:
+					Rectangle(size=self.size,pos=self.pos,source=wp)
+			else:
+				print (wp + " is not a valid background image")
 
 
 	def playpause(self):
