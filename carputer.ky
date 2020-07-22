@@ -91,7 +91,7 @@ MainThread:
 							size: self.texture_size
 							halign: 'center'
 							font_size: 20
-
+ 
 
 			OBDIIScreen:
 				name: 'obd'
