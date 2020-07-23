@@ -41,20 +41,22 @@ from threading import Thread
 from collections import defaultdict
 from os import path
 import concurrent.futures
+from kivy_settings import json_settings
+from kivy.uix.settings import SettingsWithSidebar
 #==================CONFIGURATION========================================#
-Window.fullscreen = False												#Fullscrean Boolean
-Window.size = 800,480 												    #Force a resolution, or just comment out
+#Window.fullscreen = False												#Fullscrean Boolean
+#Window.size = 800,480 												    #Force a resolution, or just comment out
 screenupdatetime = 0.5													#how fast slider and song info updates. use lower values for faster time, but more cpu work
 startupvolume = 75														#change what volume the program starts at 0-100
 MusicDirectory="/home/subcake/Music"									#change what folder PiCarputer looks in for your music
 #=======================================================================#
 #Window.fullscreen = True
-Config.read('config.ini')
-Config.set('graphics', 'width', '800')
-Config.set('graphics', 'height', '480')
-Config.set('graphics', 'borderless', 'True')
-Config.set('graphics','resizable',0)
-Config.write()
+#Config.read('config.ini')
+#Config.set('graphics', 'width', '800')
+#Config.set('graphics', 'height', '480')
+#Config.set('graphics', 'borderless', 'True')
+#Config.set('graphics','resizable',0)
+#Config.write()
 
 
 
@@ -389,6 +391,8 @@ class MainThread(AnchorLayout):
 			time.sleep(0.6)
 
 
+
+
 	def start_thread(self,dt):
 		global graph
 		graph = defaultdict(list)
@@ -400,6 +404,7 @@ class MainThread(AnchorLayout):
 class MainApp(App):
 
 	def build(self):
+		self.settings_cls = SettingsWithSidebar
 		self.icon = 'music.png'
 		sc1 = Scroller1()
 		sc2 = Scroller2()
@@ -407,6 +412,7 @@ class MainApp(App):
 		volumeslider = VolumeSlider()
 		playbuttons = PlayButtons()
 		build = Builder.load_file('carputer.ky')
+
 		build.add_widget(playbuttons)
 		build.add_widget(volumeslider)
 		build.add_widget(bigscreeninfo)
@@ -414,6 +420,17 @@ class MainApp(App):
 		build.add_widget(sc2)
 		return build
 
+	def build_config(self,config):
+		config.setdefaults("General", {
+			"startupvolume": 75
+		})
+	def build_settings(self,settings):
+		print (json_settings)
+		settings.add_json_panel("General", self.config, data=json_settings)
+
+	def on_config_change(self,config,section,key,value):
+		if key == "startupvolume":
+			self.startupvolume = int(value)
 
 
 

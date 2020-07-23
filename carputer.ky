@@ -91,7 +91,7 @@ MainThread:
 							size: self.texture_size
 							halign: 'center'
 							font_size: 20
- 
+
 
 			OBDIIScreen:
 				name: 'obd'
@@ -236,7 +236,8 @@ MainThread:
 					Button:  #settings button
 						name: 4
 						on_release:
-							root.slide_screen(self.name,"settings")
+							app.open_settings()
+							#root.slide_screen(self.name,"settings")
 						Image:
 							source:'data/icons/settings.png'
 							center_x: self.parent.center_x
