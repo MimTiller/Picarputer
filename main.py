@@ -72,6 +72,7 @@ db = dataset.connect('sqlite:///songlist.db')
 table = db['songs']
 settingsdb = db['settings']
 global graph
+global wallpaper
 graph = []
 
 #-----------------------------#KIVY#------------------------------------
@@ -111,7 +112,7 @@ class SettingDynamicOptions(SettingOptions):
 		super(SettingDynamicOptions, self)._create_popup(instance)
 
 
-class MySettings(SettingsWithNoMenu):
+class MySettings(SettingsWithSidebar):
 	def __init__(self,*args,**kargs):
 		super(MySettings,self).__init__(*args,**kargs)
 		self.register_type('dynamic_options',SettingDynamicOptions)
@@ -124,7 +125,8 @@ class MainThread(AnchorLayout):
 	media = instance.media_new_path("unknown")
 	player.set_media(media)
 	player = vlc.MediaPlayer("/path/to/file.flac")
-
+	global wallpaper
+	wallpaper = 'data/wallpapers/blackbox.jpg'
 
 
 	def __init__(self, **kwargs):
@@ -144,7 +146,7 @@ class MainThread(AnchorLayout):
 		self.artist = ''
 		self.album = ''
 		self.title = ''
-		self.wallpaper = 'data/wallpapers/blackbox.jpg'
+		self.wallpaper = wallpaper
 		#self.splash = 1
 		self.wallpaperlist = ListProperty()
 		self.result = ListProperty
@@ -161,32 +163,9 @@ class MainThread(AnchorLayout):
 			pass
 		self.ids.st.current = screenname
 
+	def change_wallpaper(self,wp):
+		self.ids.wallpaper.source = wp
 
-
-	def get_wallpapers(self):
-		cwd = os.getcwd() + "\\data\\wallpapers"
-		self.wallpaperlist = [f for f in os.listdir(cwd)]
-		#self.ids.wpspinner.text = files[0]
-		#print (files[0])
-		#self.ids.wpspinner.bind(text = self.on_spinner_select)
-		return self.wallpaperlist
-
-
-	def on_spinner_select(self,spinner,text):
-		#text = self.ids.wpspinner.text
-		self.ids.btspinner.text_autoupdate = BooleanProperty(True)
-		if text == "bluetooth":
-			print ("Yay you got the spinner to work")
-		else:
-			wp = 'data/wallpapers/' + text
-			self.ids.wpspinner.text_autoupdate = BooleanProperty(True)
-			wpfile = os.getcwd() + "\\data\\wallpapers\\{}".format(text)
-			print (wpfile)
-			if os.path.isfile(wpfile):
-				with self.canvas.before:
-					Rectangle(size=self.size,pos=self.pos,source=wp)
-			else:
-				print (wp + " is not a valid background image")
 
 
 	def playpause(self):
@@ -273,6 +252,7 @@ class MainThread(AnchorLayout):
 		self.next_file(-1)
 
 	def refresh_Screen(self,song):
+
 		x = table.find_one(location=song)
 		try:
 
@@ -291,6 +271,7 @@ class MainThread(AnchorLayout):
 			self.album_art.source='data/icons/unknown.png'
 	#called every time specified in the configuration
 	def refresh(self, dt):
+		print (wallpaper)
 		state = str(self.player.get_state())
 		duration = int(self.player.get_length()/1000)
 		position = int(self.player.get_time()/1000)
@@ -417,7 +398,7 @@ class MainThread(AnchorLayout):
 #_______________________________#MAIN APP#______________________________
 
 class MainApp(App):
-
+	global wallpaper
 	def build(self):
 		self.settings_cls = MySettings
 		self.icon = 'music.png'
@@ -432,7 +413,10 @@ class MainApp(App):
 	def build_config(self,config):
 		config.setdefaults("General", {
 			"startupvolume": 75,
-			"bluetooth_list": "Click to connect..."
+			"bluetooth_list": "Click to connect...",
+			"resolutions": '1920x1080',
+			"fullscreen": '1',
+			"wallpaper": "blackbox.jpg"
 		})
 	def on_start(self):
 		s = self.create_settings()
@@ -450,8 +434,25 @@ class MainApp(App):
 			'desc': 'List and connect to compatible Bluetooth devices',
 			'section': 'General',
 			'key': 'bluetooth_list',
-			'function_string': 'libs.btdevices.get_bluetooth_devices'
-			}
+			'function_string': 'libs.btdevices.get_bluetooth_devices'},
+			{'type': 'options',
+			'title': "Screen Resolution",
+			'desc': "Set the screen resolution",
+			'section':'General',
+			'key': 'resolutions',
+			'options': ['1920x1080','1600x900','1280x720']},
+			{'type': 'bool',
+			'title': 'Fullscreen',
+			'desc': 'Set window to be Fullscreen or Windowed',
+			'section': 'General',
+			'key':'fullscreen'},
+			{'type':'dynamic_options',
+			'title': 'Wallpaper',
+			'desc': 'Set your Wallpaper',
+			'section':'General',
+			'key':'wallpaper',
+			'function_string': 'libs.tagger.get_wallpapers'}
+
 			])
 		settings.add_json_panel("General", self.config, data=json_settings)
 
@@ -459,8 +460,27 @@ class MainApp(App):
 	def on_config_change(self,config,section,key,value):
 		if key == "startupvolume":
 			self.startupvolume = int(value)
-
-
+		if key == "bluetooth_list":
+			pass
+		if key == "resolutions":
+			x = value.split('x')
+			height = int(x[1])
+			width = int(x[0])
+			Window.size = width,height
+		if key == "fullscreen":
+			print (value)
+			if value == '1':
+				Window.fullscreen = True
+			else:
+				Window.fullscreen = False
+		if key == "wallpaper":
+			wp = 'data/wallpapers/' + value
+			wpfile = os.getcwd() + "\\data\\wallpapers\\{}".format(value)
+			print (wpfile, wp)
+			if os.path.isfile(wpfile):
+				wallpaper = wp
+			else:
+				print (wp + " is not a valid background image")
 
 if __name__ == "__main__":
 	MainApp().run()
