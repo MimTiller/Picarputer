@@ -24,6 +24,7 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.label import Label
 from kivy.uix.spinner import Spinner
 #misc
+import importlib
 
 from kivy.logger import Logger
 from kivy.lang import Builder
@@ -41,13 +42,13 @@ from threading import Thread
 from collections import defaultdict
 from os import path
 import concurrent.futures
-from kivy_settings import json_settings
-from kivy.uix.settings import SettingsWithSidebar
+import json
+from kivy.storage.jsonstore import JsonStore
+from kivy.uix.settings import SettingsWithNoMenu, SettingOptions, SettingsWithSidebar
 #==================CONFIGURATION========================================#
 #Window.fullscreen = False												#Fullscrean Boolean
 #Window.size = 800,480 												    #Force a resolution, or just comment out
 screenupdatetime = 0.5													#how fast slider and song info updates. use lower values for faster time, but more cpu work
-startupvolume = 75														#change what volume the program starts at 0-100
 MusicDirectory="/home/subcake/Music"									#change what folder PiCarputer looks in for your music
 #=======================================================================#
 #Window.fullscreen = True
@@ -69,6 +70,7 @@ playicon = 'data/icons/play.png'
 pauseicon = 'data/icons/pause.png'
 db = dataset.connect('sqlite:///songlist.db')
 table = db['songs']
+settingsdb = db['settings']
 global graph
 graph = []
 
@@ -98,6 +100,23 @@ class Scroller2(FloatLayout):
 class BigScreenInfo(BoxLayout):
 	pass
 
+#custom class for bluetooth list in settings page
+class SettingDynamicOptions(SettingOptions):
+	function_string = StringProperty()
+	def _create_popup(self,instance):
+		mod_name, func_name= self.function_string.rsplit('.',1)
+		mod = importlib.import_module(mod_name)
+		func = getattr(mod,func_name)
+		self.options = func()
+		super(SettingDynamicOptions, self)._create_popup(instance)
+
+
+class MySettings(SettingsWithNoMenu):
+	def __init__(self,*args,**kargs):
+		super(MySettings,self).__init__(*args,**kargs)
+		self.register_type('dynamic_options',SettingDynamicOptions)
+
+
 #-----------------------MAIN-FUNCTIONS---------------------------------#
 class MainThread(AnchorLayout):
 	instance = vlc.Instance()
@@ -105,14 +124,14 @@ class MainThread(AnchorLayout):
 	media = instance.media_new_path("unknown")
 	player.set_media(media)
 	player = vlc.MediaPlayer("/path/to/file.flac")
-	splash = int(1)
+
 
 
 	def __init__(self, **kwargs):
 		super(MainThread ,self).__init__(**kwargs)
 		Clock.schedule_interval(self.refresh, screenupdatetime)
 		Clock.schedule_once(self.start_thread,0)
-
+		self.startupvolume = 75
 		#self.buttonlist=[]
 		#self.artistlist=[]
 		#self.artistlistbool = False
@@ -142,15 +161,7 @@ class MainThread(AnchorLayout):
 			pass
 		self.ids.st.current = screenname
 
-	def get_bluetooth_devices(self):
-		with concurrent.futures.ThreadPoolExecutor() as executor:
-			future = executor.submit(btdevices.bluetooth_search)
-			self.result = future.result()
-			if self.result == []:
-				print ("No Devices Found")
-				self.result == ["None"]
-			print (self.result)
-			return self.result
+
 
 	def get_wallpapers(self):
 		cwd = os.getcwd() + "\\data\\wallpapers"
@@ -278,24 +289,27 @@ class MainThread(AnchorLayout):
 			self.album_art.source=art
 		except:
 			self.album_art.source='data/icons/unknown.png'
-
-	def refresh(self, dt):										#called every time specified in the configuration
+	#called every time specified in the configuration
+	def refresh(self, dt):
 		state = str(self.player.get_state())
 		duration = int(self.player.get_length()/1000)
 		position = int(self.player.get_time()/1000)
 		if position == -1:
 			return
-		m, s = divmod(position, 60) 									#change time from seconds to minutes and seconds
+		#change time from seconds to minutes and seconds
+		m, s = divmod(position, 60)
 		if s < 10:
 			s = '%02d' %s
+		#update song position text
 		try:
-			self.ids.songpos.text = "{0}:{1}".format(m, s) 					#update song position text
+			self.ids.songpos.text = "{0}:{1}".format(m, s)
 			remainder = duration - int(position)
 			m, s = divmod(remainder, 60)
 			if s < 10:
 				s = '%02d' %s
-			self.ids.songlength.text = "{0}:{1}".format(m, s)				#update remaining time left on song
-			self.slider.value = position / screenupdatetime					#update slider
+			#update remaining time left on song and slider
+			self.ids.songlength.text = "{0}:{1}".format(m, s)
+			self.slider.value = position / screenupdatetime
 			if state == "State.Ended":
 				print ("{0} ended".format(self.title))
 				self.level = 'artist'
@@ -336,7 +350,8 @@ class MainThread(AnchorLayout):
 		self.player.audio_set_volume(int(value))
 
 	def volstartup(self):
-		self.player.audio_set_volume(int(startupvolume))
+		volume = App.get_running_app().config.get('General','startupvolume')
+		self.player.audio_set_volume(int(volume))
 		return int(self.player.audio_get_volume())
 
 	#take song, look up file in database, extract artist album, and title
@@ -404,29 +419,42 @@ class MainThread(AnchorLayout):
 class MainApp(App):
 
 	def build(self):
-		self.settings_cls = SettingsWithSidebar
+		self.settings_cls = MySettings
 		self.icon = 'music.png'
-		sc1 = Scroller1()
-		sc2 = Scroller2()
-		bigscreeninfo = BigScreenInfo()
-		volumeslider = VolumeSlider()
-		playbuttons = PlayButtons()
 		build = Builder.load_file('carputer.ky')
-
-		build.add_widget(playbuttons)
-		build.add_widget(volumeslider)
-		build.add_widget(bigscreeninfo)
-		build.add_widget(sc1)
-		build.add_widget(sc2)
+		build.add_widget(PlayButtons())
+		build.add_widget(VolumeSlider())
+		build.add_widget(BigScreenInfo())
+		build.add_widget(Scroller1())
+		build.add_widget(Scroller2())
 		return build
 
 	def build_config(self,config):
 		config.setdefaults("General", {
-			"startupvolume": 75
+			"startupvolume": 75,
+			"bluetooth_list": "Click to connect..."
 		})
+	def on_start(self):
+		s = self.create_settings()
+		self.root.ids.settingsscreen.add_widget(s)
+
 	def build_settings(self,settings):
-		print (json_settings)
+		json_settings = json.dumps([
+			{'type': 'numeric',
+			'title': 'Startup Volume',
+			'desc': 'Set the default startup volume for the picarputer',
+			'key': 'startupvolume',
+			'section': 'General'},
+			{'type': 'dynamic_options',
+			'title': 'Bluetooth Devices',
+			'desc': 'List and connect to compatible Bluetooth devices',
+			'section': 'General',
+			'key': 'bluetooth_list',
+			'function_string': 'libs.btdevices.get_bluetooth_devices'
+			}
+			])
 		settings.add_json_panel("General", self.config, data=json_settings)
+
 
 	def on_config_change(self,config,section,key,value):
 		if key == "startupvolume":

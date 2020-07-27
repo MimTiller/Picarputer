@@ -147,50 +147,8 @@ MainThread:
 			SettingsScreen:
 				name: 'settings'
 				BoxLayout:
-					size_hint: 0.95,1
-					BoxLayout:
-						orientation: 'vertical'
-						size_hint:0.08,1
-						Button:
-							background_color: 0, 0, 0, 0
-							on_release: app.stop()
-							Image:
-								source:'data/icons/power.png'
-								center_x: self.parent.center_x
-								center_y: self.parent.center_y
-								size: 80, 80
-								allow_stretch: True
-					BoxLayout:
-						orientation: 'vertical'
-						size_hint: 0.3,1
-						Button:
-							text: "Wallpaper:"
-						Button:
-							text: "Bluetooth:"
-						Button:
-							text: "Startup Volume:"
-						Button:
-							text: "Startup Mode:"
-					BoxLayout:
-						orientation: 'vertical'
-						Spinner:
-							id: wpspinner
-							values: root.get_wallpapers()
-							text: self.values[0]
-							on_text: root.on_spinner_select(self,text=self.text)
-						Spinner:
-							id: btspinner
-							values: root.get_bluetooth_devices()
-							text: "Click to Connect:"
-							on_text: root.on_spinner_select(self,text=self.text)
-						BoxLayout:
-							Slider:
-								id: volumesetting
-							Button:
-								size_hint: 0.1,1
-								text: str(int(volumesetting.value))
-						Button:
-							text: "gai"
+					id: settingsscreen
+
 		#Bottom Screen selectors
 		Menu:
 			AnchorLayout:
@@ -236,8 +194,8 @@ MainThread:
 					Button:  #settings button
 						name: 4
 						on_release:
-							app.open_settings()
-							#root.slide_screen(self.name,"settings")
+							#app.open_settings()
+							root.slide_screen(self.name,"settings")
 						Image:
 							source:'data/icons/settings.png'
 							center_x: self.parent.center_x
