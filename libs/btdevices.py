@@ -29,7 +29,7 @@ def bt_song_info(interface, changed, invalidated):
             for key in ('Title', 'Artist', 'Album'):
                 print('   {}: {}'.format(key, value.get(key, '')))
 
-def bluetooth_control():
+def bluetooth_control(fd,condition):
     str = fd.readline()
     if str.startswith('play'):
         player_iface.Play()

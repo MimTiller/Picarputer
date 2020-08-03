@@ -1,12 +1,16 @@
  #!/usr/bin/python
 #kivy imports
-
 from kivy.app import App
 from kivy.animation import Animation
 from kivy.core.window import Window
-from kivy.config import Config
+from kivy.config import Config, ConfigParser
 from kivy.clock import Clock
+
 from kivy.garden.graph import MeshLinePlot, SmoothLinePlot
+from kivy.garden.notification import Notification
+from kivy.storage.jsonstore import JsonStore
+from kivy.uix.settings import SettingsWithNoMenu, SettingOptions, SettingsWithSidebar, SettingItem
+from kivy.metrics import dp
 #layouts
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
@@ -23,6 +27,7 @@ from kivy.uix.widget import Widget
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.label import Label
 from kivy.uix.spinner import Spinner
+from kivy.uix.popup import Popup
 #misc
 import importlib
 
@@ -36,44 +41,49 @@ from kivy.graphics import *
 from time import time
 from random import shuffle
 from multiprocessing import Process
-import re, sys, os, random, threading, time, eyed3, mutagen, glob, dataset, usb, psutil
-from libs import tagger, audio, vlc, btdevices
+import re, sys, os, random, threading, time, eyed3, mutagen, glob
+import dataset, usb, psutil, importlib, json, concurrent.futures
+
+from libs import tagger, audio, vlc, btdevices, initialize
+from libs.settings import SettingSlider
 from threading import Thread
 from collections import defaultdict
 from os import path
-import concurrent.futures
-import json
-from kivy.storage.jsonstore import JsonStore
-from kivy.uix.settings import SettingsWithNoMenu, SettingOptions, SettingsWithSidebar
+
+
 #==================CONFIGURATION========================================#
-#Window.fullscreen = False												#Fullscrean Boolean
-#Window.size = 800,480 												    #Force a resolution, or just comment out
+									    								#Force a resolution, or just comment out
 screenupdatetime = 0.5													#how fast slider and song info updates. use lower values for faster time, but more cpu work
 MusicDirectory="/home/subcake/Music"									#change what folder PiCarputer looks in for your music
 #=======================================================================#
-#Window.fullscreen = True
-#Config.read('config.ini')
-#Config.set('graphics', 'width', '800')
-#Config.set('graphics', 'height', '480')
-#Config.set('graphics', 'borderless', 'True')
-#Config.set('graphics','resizable',0)
-#Config.write()
 
 
-
-
-
-ProgDir="/home/subcake/Desktop/Picarputer"
-ArtDir = "artwork"
-update_length_milliseconds = screenupdatetime*1000
 playicon = 'data/icons/play.png'
 pauseicon = 'data/icons/pause.png'
 db = dataset.connect('sqlite:///songlist.db')
 table = db['songs']
 settingsdb = db['settings']
 global graph
-global wallpaper
+#global wallpaper
 graph = []
+
+
+
+
+#get current screen resolution
+x = initialize.current_res().split('x')
+height = int(x[1])
+width = int(x[0])
+config = ConfigParser()
+config.read('main.ini')
+conf_res = config.get('General', 'resolutions').split('x')
+confh = conf_res[1]
+confw = conf_res[0]
+
+#Set Resolution
+Window.size = width,height
+Window.maximize()
+
 
 #-----------------------------#KIVY#------------------------------------
 class ScreenManagement(ScreenManager):
@@ -109,13 +119,16 @@ class SettingDynamicOptions(SettingOptions):
 		mod = importlib.import_module(mod_name)
 		func = getattr(mod,func_name)
 		self.options = func()
-		super(SettingDynamicOptions, self)._create_popup(instance)
 
+		super(SettingDynamicOptions, self)._create_popup(instance)
 
 class MySettings(SettingsWithSidebar):
 	def __init__(self,*args,**kargs):
 		super(MySettings,self).__init__(*args,**kargs)
 		self.register_type('dynamic_options',SettingDynamicOptions)
+		self.register_type('slider',SettingSlider)
+
+
 
 
 #-----------------------MAIN-FUNCTIONS---------------------------------#
@@ -151,6 +164,17 @@ class MainThread(AnchorLayout):
 		self.wallpaperlist = ListProperty()
 		self.result = ListProperty
 		self.currentscreen = 1
+
+	def notify(self,message,timeout):
+		parent.ids.notify.text = message
+		anim = Animation(pos_hint={'x':.4,'y':0.12},duration=.5)
+		anim.start(self.ids.notify)
+		Clock.schedule_once(self.hide_notify(),timeout)
+
+	def hide_notify(self):
+		Animation(pos_hint={'x':1})
+		anim.start(self.ids.notify)
+
 
 	def slide_screen(self,instance,screenname):
 		if instance > self.currentscreen:
@@ -224,19 +248,15 @@ class MainThread(AnchorLayout):
 				tracklist.append(int(song['track']))
 			tracksort = sorted(zip(tracklist,songlist))
 			sortedtitle = [title for track, title in tracksort]
-
 			try:
 				print (songlist)
 				self.dir += direction
 				self.next_Song = sortedtitle[self.dir]
 				print (self.dir)
-
 			except:
 				self.dir = 0
 				self.next_Song = sortedtitle[self.dir]
 				print (self.dir)
-
-
 		self.media = self.instance.media_new_path(self.next_Song)
 		self.player.set_media(self.media)
 		self.player.play()
@@ -252,10 +272,8 @@ class MainThread(AnchorLayout):
 		self.next_file(-1)
 
 	def refresh_Screen(self,song):
-
 		x = table.find_one(location=song)
 		try:
-
 			art = x['albumart']
 		except:
 			print ("art wasnt found")
@@ -269,9 +287,9 @@ class MainThread(AnchorLayout):
 			self.album_art.source=art
 		except:
 			self.album_art.source='data/icons/unknown.png'
+
 	#called every time specified in the configuration
 	def refresh(self, dt):
-		print (wallpaper)
 		state = str(self.player.get_state())
 		duration = int(self.player.get_length()/1000)
 		position = int(self.player.get_time()/1000)
@@ -295,7 +313,6 @@ class MainThread(AnchorLayout):
 				print ("{0} ended".format(self.title))
 				self.level = 'artist'
 				self.next_button()
-
 		except:
 			pass
 
@@ -314,7 +331,6 @@ class MainThread(AnchorLayout):
 				self.player.play()
 				self.refresh_Screen(search_results)
 				self.ids.playpausebutton.source = pauseicon
-
 			else:
 				pass
 
@@ -322,7 +338,7 @@ class MainThread(AnchorLayout):
 	def slider_max(self, song):
 		for x in table.find(location=song):
 			length = x['length']
-										#returns the max for the song length slider (max value depends on how quickly it gets updated)
+		#returns the max for the song length slider (max value depends on how quickly it gets updated)
 		self.slider.max = length / screenupdatetime
 		print (self.slider.max)
 
@@ -358,16 +374,12 @@ class MainThread(AnchorLayout):
 		self.ids.RAMpc.text = "RAM Used: " + str(psutil.virtual_memory().percent) + "%"
 		self.ids.RAM.text = ": " + str(round(psutil.virtual_memory().total/1024/1024/1024, 2)) + "GB"
 
-
-
 	def perf_graph(self):
 		global graph
 		cpugraph = self.cpugraph
 		cpuplot= MeshLinePlot(color=[1,0,1])
-
 		ramgraph = self.ramgraph
 		RAMplot= MeshLinePlot(color=[0,1,0])
-
 		while True:
 			for key in ['cpu','RAMpc']:
 				if len(graph[key])>= 100:
@@ -382,12 +394,8 @@ class MainThread(AnchorLayout):
 			cpuplot.points = [(i, j) for i, j in enumerate(graph['cpu'])]
 			self.ramgraph.add_plot(RAMplot)
 			self.cpugraph.add_plot(cpuplot)
-
 			#print (graph['cpu'])
 			time.sleep(0.6)
-
-
-
 
 	def start_thread(self,dt):
 		global graph
@@ -413,8 +421,8 @@ class MainApp(App):
 	def build_config(self,config):
 		config.setdefaults("General", {
 			"startupvolume": 75,
-			"bluetooth_list": "Click to connect...",
-			"resolutions": '1920x1080',
+			"bt_list": "Click to connect...",
+			"resolutions": initialize.current_res(),
 			"fullscreen": '1',
 			"wallpaper": "blackbox.jpg"
 		})
@@ -422,9 +430,13 @@ class MainApp(App):
 		s = self.create_settings()
 		self.root.ids.settingsscreen.add_widget(s)
 
+
+
+
+
 	def build_settings(self,settings):
 		json_settings = json.dumps([
-			{'type': 'numeric',
+			{'type': 'slider',
 			'title': 'Startup Volume',
 			'desc': 'Set the default startup volume for the picarputer',
 			'key': 'startupvolume',
@@ -433,14 +445,14 @@ class MainApp(App):
 			'title': 'Bluetooth Devices',
 			'desc': 'List and connect to compatible Bluetooth devices',
 			'section': 'General',
-			'key': 'bluetooth_list',
+			'key': 'bt_list',
 			'function_string': 'libs.btdevices.get_bluetooth_devices'},
-			{'type': 'options',
+			{'type': 'dynamic_options',
 			'title': "Screen Resolution",
 			'desc': "Set the screen resolution",
 			'section':'General',
 			'key': 'resolutions',
-			'options': ['1920x1080','1600x900','1280x720']},
+			'function_string': 'libs.initialize.supported_res'},
 			{'type': 'bool',
 			'title': 'Fullscreen',
 			'desc': 'Set window to be Fullscreen or Windowed',
@@ -458,10 +470,14 @@ class MainApp(App):
 
 
 	def on_config_change(self,config,section,key,value):
+		print(key)
 		if key == "startupvolume":
 			self.startupvolume = int(value)
-		if key == "bluetooth_list":
-			pass
+			MT = MainThread()
+			MT.notify("Volume changed to {}".format(value),2)
+		if key == "bt_list":
+			message = "Connected to {}".format(value)
+
 		if key == "resolutions":
 			x = value.split('x')
 			height = int(x[1])
@@ -478,7 +494,7 @@ class MainApp(App):
 			wpfile = os.getcwd() + "\\data\\wallpapers\\{}".format(value)
 			print (wpfile, wp)
 			if os.path.isfile(wpfile):
-				wallpaper = wp
+				change_wallpaper(wp)
 			else:
 				print (wp + " is not a valid background image")
 

@@ -29,33 +29,6 @@ MainThread:
 
 			MusicScreen:
 				name: 'music'
-				Scroller1:
-					size_hint: 0.4, 0.915
-					id: artistscroller
-					ScrollView:
-						size_hint: 1,1
-						pos_hint:{'x':0,'y':0}
-						GridLayout:
-							id: scroller1
-							height: self.minimum_height
-							size_hint_y: None
-							cols: 1
-							spacing: 0, 0
-							padding: 0, 0
-				Scroller2:
-					size_hint: 0.4, 0.915
-					id: albumscroller
-					ScrollView:
-						pos_hint:{'x':0,'y':0}
-						size_hint: 1,1
-						GridLayout:
-							id: scroller2
-							height: self.minimum_height
-							size_hint_y: None
-							cols: 1
-							spacing: 0, 0
-							padding: 0, 0
-
 				FloatLayout:
 					size_hint: 1, 1
 					Image:
@@ -99,7 +72,6 @@ MainThread:
 					Button:
 						id: start
 						text: "start"
-						on_press: root.startusb()
 					Button:
 						id: latitude
 					Button:
@@ -311,3 +283,9 @@ MainThread:
 					orientation: 'vertical'
 					id: volumeslider
 					on_value: root.volslider(self.value)
+	FloatLayout:
+		Button:
+			id: notify
+			size_hint: .4, .1
+			pos_hint: {'x':1,'y':0.12}
+			text: "push me"
