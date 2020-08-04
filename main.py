@@ -29,7 +29,7 @@ from kivy.uix.label import Label
 from kivy.uix.spinner import Spinner
 from kivy.uix.popup import Popup
 #misc
-import importlib
+
 
 from kivy.logger import Logger
 from kivy.lang import Builder
@@ -45,7 +45,7 @@ import re, sys, os, random, threading, time, eyed3, mutagen, glob
 import dataset, usb, psutil, importlib, json, concurrent.futures
 
 from libs import tagger, audio, vlc, btdevices, initialize
-from libs.settings import SettingSlider
+from libs.settings import SettingSlider, SettingDynamicOptions, MySettings
 from threading import Thread
 from collections import defaultdict
 from os import path
@@ -112,21 +112,9 @@ class BigScreenInfo(BoxLayout):
 	pass
 
 #custom class for bluetooth list in settings page
-class SettingDynamicOptions(SettingOptions):
-	function_string = StringProperty()
-	def _create_popup(self,instance):
-		mod_name, func_name= self.function_string.rsplit('.',1)
-		mod = importlib.import_module(mod_name)
-		func = getattr(mod,func_name)
-		self.options = func()
 
-		super(SettingDynamicOptions, self)._create_popup(instance)
 
-class MySettings(SettingsWithSidebar):
-	def __init__(self,*args,**kargs):
-		super(MySettings,self).__init__(*args,**kargs)
-		self.register_type('dynamic_options',SettingDynamicOptions)
-		self.register_type('slider',SettingSlider)
+
 
 
 
@@ -166,11 +154,11 @@ class MainThread(AnchorLayout):
 		self.currentscreen = 1
 
 	def notify(self,message,timeout):
-		parent.ids.notify.text = message
-		anim = Animation(pos_hint={'x':.4,'y':0.12},duration=.5)
-		anim.start(self.ids.notify)
-		Clock.schedule_once(self.hide_notify(),timeout)
-
+		#self.ids.notify.text = message
+		#anim = Animation(pos_hint={'x':.4,'y':0.12},duration=.5)
+		#anim.start(self.ids.notify)
+		#Clock.schedule_once(self.hide_notify(),timeout)
+		pass
 	def hide_notify(self):
 		Animation(pos_hint={'x':1})
 		anim.start(self.ids.notify)
@@ -349,7 +337,7 @@ class MainThread(AnchorLayout):
 	def volstartup(self):
 		volume = App.get_running_app().config.get('General','startupvolume')
 		self.player.audio_set_volume(int(volume))
-		return int(self.player.audio_get_volume())
+		return int(volume)
 
 	#take song, look up file in database, extract artist album, and title
 	def songinfoupdate(self, song):
@@ -494,7 +482,7 @@ class MainApp(App):
 			wpfile = os.getcwd() + "\\data\\wallpapers\\{}".format(value)
 			print (wpfile, wp)
 			if os.path.isfile(wpfile):
-				change_wallpaper(wp)
+				root.ids.wallpaperbg.source = wp
 			else:
 				print (wp + " is not a valid background image")
 

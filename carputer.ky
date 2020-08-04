@@ -279,7 +279,7 @@ MainThread:
 					background_color:(1,1,1,0)
 				Slider:
 					cursor_size: 20, 20
-					value: root.volstartup()
+					value: int(root.volstartup())
 					orientation: 'vertical'
 					id: volumeslider
 					on_value: root.volslider(self.value)
