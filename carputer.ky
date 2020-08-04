@@ -1,22 +1,20 @@
 #:import SlideTransition kivy.uix.screenmanager.SlideTransition
 #:import MeshLinePlot kivy.garden.graph.MeshLinePlot
+#:import isfile os.path.isfile
 
 MainThread:
 	album_art:album_art
 	slider:slider
 	cpugraph:cpugraph
 	ramgraph:ramgraph
-
-
+	source:'image.gif'
+	id: MT
 
 	canvas.before:
-		Color:
-			rgba:(1,1,1,1)
 		Rectangle:
-			id: wallpaper
 			pos: self.pos
 			size: self.size
-			source: root.wallpaper
+			source: self.source
 	AnchorLayout:
 		anchor_x: 'center'
 		anchor_y: 'center'

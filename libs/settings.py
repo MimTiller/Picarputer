@@ -9,9 +9,8 @@ from kivy.uix.widget import Widget
 from kivy.uix.slider import Slider
 from kivy.uix.button import Button
 from kivy.uix.label import Label
+import importlib, os
 
-
-import importlib
 
 class SettingSpacer(Widget):
     # Internal class, not documented.

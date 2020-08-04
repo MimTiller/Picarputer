@@ -70,19 +70,6 @@ graph = []
 
 
 
-#get current screen resolution
-x = initialize.current_res().split('x')
-height = int(x[1])
-width = int(x[0])
-config = ConfigParser()
-config.read('main.ini')
-conf_res = config.get('General', 'resolutions').split('x')
-confh = conf_res[1]
-confw = conf_res[0]
-
-#Set Resolution
-Window.size = width,height
-Window.maximize()
 
 
 #-----------------------------#KIVY#------------------------------------
@@ -111,8 +98,27 @@ class Scroller2(FloatLayout):
 class BigScreenInfo(BoxLayout):
 	pass
 
-#custom class for bluetooth list in settings page
 
+#get current screen resolution
+x = initialize.current_res().split('x')
+height = int(x[1])
+width = int(x[0])
+config = ConfigParser()
+config.read('main.ini')
+conf_res = config.get('General', 'resolutions').split('x')
+confh = int(conf_res[1])
+confw = int(conf_res[0])
+
+#Set Resolution
+Window.size = confw,confh
+#Window.maximize()
+
+#check Fullscreen
+fs = config.get('General', 'fullscreen')
+if fs == "1":
+	Window.fullscreen = True
+elif fs == "0":
+	Window.fullscreen = False
 
 
 
@@ -126,12 +132,19 @@ class MainThread(AnchorLayout):
 	media = instance.media_new_path("unknown")
 	player.set_media(media)
 	player = vlc.MediaPlayer("/path/to/file.flac")
-	global wallpaper
-	wallpaper = 'data/wallpapers/blackbox.jpg'
+
+
 
 
 	def __init__(self, **kwargs):
 		super(MainThread ,self).__init__(**kwargs)
+		#pull the config
+		config = ConfigParser()
+		config.read('main.ini')
+		wallpaper = config.get('General', 'wallpaper')
+		wpd = 'data/wallpapers/' + wallpaper
+		img = str(wpd)
+		self.source = img
 		Clock.schedule_interval(self.refresh, screenupdatetime)
 		Clock.schedule_once(self.start_thread,0)
 		self.startupvolume = 75
@@ -147,11 +160,20 @@ class MainThread(AnchorLayout):
 		self.artist = ''
 		self.album = ''
 		self.title = ''
-		self.wallpaper = wallpaper
+		self.image = ''
 		#self.splash = 1
 		self.wallpaperlist = ListProperty()
-		self.result = ListProperty
 		self.currentscreen = 1
+
+	def update_rect(self,*args):
+		config = ConfigParser()
+		config.read('main.ini')
+		wallpaper = config.get('General', 'wallpaper')
+		wpd = 'data/wallpapers/' + wallpaper
+		img = str(wpd)
+		file_image = MainThread()
+		file_image.source = img
+
 
 	def notify(self,message,timeout):
 		#self.ids.notify.text = message
@@ -175,8 +197,9 @@ class MainThread(AnchorLayout):
 			pass
 		self.ids.st.current = screenname
 
-	def change_wallpaper(self,wp):
-		self.ids.wallpaper.source = wp
+
+
+
 
 
 
@@ -339,6 +362,7 @@ class MainThread(AnchorLayout):
 		self.player.audio_set_volume(int(volume))
 		return int(volume)
 
+
 	#take song, look up file in database, extract artist album, and title
 	def songinfoupdate(self, song):
 		for x in table.find(location = song):
@@ -394,10 +418,15 @@ class MainThread(AnchorLayout):
 #_______________________________#MAIN APP#______________________________
 
 class MainApp(App):
-	global wallpaper
+
+
+
+
 	def build(self):
+
 		self.settings_cls = MySettings
 		self.icon = 'music.png'
+
 		build = Builder.load_file('carputer.ky')
 		build.add_widget(PlayButtons())
 		build.add_widget(VolumeSlider())
@@ -417,7 +446,6 @@ class MainApp(App):
 	def on_start(self):
 		s = self.create_settings()
 		self.root.ids.settingsscreen.add_widget(s)
-
 
 
 
@@ -451,17 +479,17 @@ class MainApp(App):
 			'desc': 'Set your Wallpaper',
 			'section':'General',
 			'key':'wallpaper',
-			'function_string': 'libs.tagger.get_wallpapers'}
+			'function_string': 'libs.initialize.get_wallpapers'}
 
 			])
 		settings.add_json_panel("General", self.config, data=json_settings)
 
 
 	def on_config_change(self,config,section,key,value):
-		print(key)
+		#MT = MainThread()
 		if key == "startupvolume":
 			self.startupvolume = int(value)
-			MT = MainThread()
+
 			MT.notify("Volume changed to {}".format(value),2)
 		if key == "bt_list":
 			message = "Connected to {}".format(value)
@@ -480,9 +508,10 @@ class MainApp(App):
 		if key == "wallpaper":
 			wp = 'data/wallpapers/' + value
 			wpfile = os.getcwd() + "\\data\\wallpapers\\{}".format(value)
-			print (wpfile, wp)
 			if os.path.isfile(wpfile):
-				root.ids.wallpaperbg.source = wp
+				print (MainThread().source)
+				#MT.source = wp
+				#print (MT.source)
 			else:
 				print (wp + " is not a valid background image")
 
