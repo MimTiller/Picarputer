@@ -7,14 +7,11 @@ MainThread:
 	slider:slider
 	cpugraph:cpugraph
 	ramgraph:ramgraph
-	source:'image.gif'
-	id: MT
-
-	canvas.before:
-		Rectangle:
-			pos: self.pos
-			size: self.size
-			source: self.source
+	Image:
+		id: wallpp
+		source: root.wpd
+		pos: self.pos
+		size: self.size
 	AnchorLayout:
 		anchor_x: 'center'
 		anchor_y: 'center'

@@ -139,14 +139,13 @@ class MainThread(AnchorLayout):
 	def __init__(self, **kwargs):
 		super(MainThread ,self).__init__(**kwargs)
 		#pull the config
-		config = ConfigParser()
-		config.read('main.ini')
-		wallpaper = config.get('General', 'wallpaper')
-		wpd = 'data/wallpapers/' + wallpaper
-		img = str(wpd)
-		self.source = img
+		self.config = ConfigParser()
+		self.config.read('main.ini')
+		self.wallpaper = self.config.get('General', 'wallpaper')
+		self.wpd = str('data/wallpapers/' + self.wallpaper)
+
 		Clock.schedule_interval(self.refresh, screenupdatetime)
-		Clock.schedule_once(self.start_thread,0)
+		#Clock.schedule_once(self.start_thread,0)
 		self.startupvolume = 75
 		#self.buttonlist=[]
 		#self.artistlist=[]
@@ -165,14 +164,12 @@ class MainThread(AnchorLayout):
 		self.wallpaperlist = ListProperty()
 		self.currentscreen = 1
 
-	def update_rect(self,*args):
-		config = ConfigParser()
-		config.read('main.ini')
-		wallpaper = config.get('General', 'wallpaper')
-		wpd = 'data/wallpapers/' + wallpaper
-		img = str(wpd)
-		file_image = MainThread()
-		file_image.source = img
+	def update_rect(self,value):
+		self.wallpaper = self.config.get('General', 'wallpaper')
+		self.wpd = 'data/wallpapers/' + value
+		self.ids['wallpp'].source = self.wpd
+		#self.ids.testbackground.source= wpd
+
 
 
 	def notify(self,message,timeout):
@@ -301,6 +298,7 @@ class MainThread(AnchorLayout):
 
 	#called every time specified in the configuration
 	def refresh(self, dt):
+		#print ("SOURCE",self.ids.testbackground.source)
 		state = str(self.player.get_state())
 		duration = int(self.player.get_length()/1000)
 		position = int(self.player.get_time()/1000)
@@ -486,7 +484,7 @@ class MainApp(App):
 
 
 	def on_config_change(self,config,section,key,value):
-		#MT = MainThread()
+		MT = MainThread()
 		if key == "startupvolume":
 			self.startupvolume = int(value)
 
@@ -509,8 +507,8 @@ class MainApp(App):
 			wp = 'data/wallpapers/' + value
 			wpfile = os.getcwd() + "\\data\\wallpapers\\{}".format(value)
 			if os.path.isfile(wpfile):
-				print (MainThread().source)
-				#MT.source = wp
+				print ("Current wallpaper is", MT.wpd)
+				MT.update_rect(value)
 				#print (MT.source)
 			else:
 				print (wp + " is not a valid background image")

@@ -10,13 +10,7 @@ filelist = {".mp3":MP3, ".m4a":MP4, ".flac":FLAC}
 db = dataset.connect('sqlite:///songlist.db')
 table = db['songs']
 
-def get_wallpapers():
-	cwd = os.getcwd() + "\\data\\wallpapers"
-	wallpaperlist = [f for f in os.listdir(cwd)]
-	#self.ids.wpspinner.text = files[0]
-	#print (files[0])
-	#self.ids.wpspinner.bind(text = self.on_spinner_select)
-	return wallpaperlist
+
 
 def filetagger(root,filename):
 	location = os.path.join(root,filename)								#add the file together from filesearcher
