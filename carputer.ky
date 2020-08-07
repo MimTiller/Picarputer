@@ -16,8 +16,12 @@ MainThread:
 			id: wallpp
 			source: self.wallpaper_selection
 			pos: self.pos
-			size: self.size
 			allow_stretch: True
+			keep_ratio: True
+			size_hint_y: None
+			size_hint_x: None
+			width: self.parent.width
+			height: self.parent.width/self.image_ratio
 		#Main Screens
 		ScreenManagement:
 			transition: SlideTransition()
