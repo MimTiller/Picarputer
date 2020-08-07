@@ -7,15 +7,17 @@ MainThread:
 	slider:slider
 	cpugraph:cpugraph
 	ramgraph:ramgraph
-	Image:
-		id: wallpp
-		source: root.wpd
-		pos: self.pos
-		size: self.size
+
+
 	AnchorLayout:
 		anchor_x: 'center'
 		anchor_y: 'center'
-
+		WallPaper:
+			id: wallpp
+			source: self.wallpaper_selection
+			pos: self.pos
+			size: self.size
+			allow_stretch: True
 		#Main Screens
 		ScreenManagement:
 			transition: SlideTransition()
