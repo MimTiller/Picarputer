@@ -44,7 +44,7 @@ from multiprocessing import Process
 import re, sys, os, random, threading, time, eyed3, mutagen, glob
 import dataset, usb, psutil, importlib, json, concurrent.futures
 
-from libs import tagger, audio, vlc, btdevices, initialize
+from libs import tagger, audio, vlc, btdevices, initialize, settings
 from libs.settings import SettingSlider, SettingDynamicOptions, MySettings
 from threading import Thread
 from collections import defaultdict
@@ -144,7 +144,7 @@ class MainThread(AnchorLayout):
 	def __init__(self, **kwargs):
 		super(MainThread ,self).__init__(**kwargs)
 		Clock.schedule_interval(self.refresh, screenupdatetime)
-		#Clock.schedule_once(self.start_thread,0)
+		Clock.schedule_once(self.start_thread,0)
 		self.startupvolume = 75
 		#self.buttonlist=[]
 		#self.artistlist=[]
@@ -287,7 +287,7 @@ class MainThread(AnchorLayout):
 
 	#called every time specified in the configuration
 	def refresh(self, dt):
-		#print ("SOURCE",WallPaper.wallpaper_selection)
+		self.perf_counter()
 		state = str(self.player.get_state())
 		duration = int(self.player.get_length()/1000)
 		position = int(self.player.get_time()/1000)
@@ -369,9 +369,12 @@ class MainThread(AnchorLayout):
 		self.ids.bigscreenalbum.text = album
 
 	def perf_counter(self):
-		self.ids.CPU.text = "CPU: " + str(psutil.cpu_percent()) + "%"
-		self.ids.RAMpc.text = "RAM Used: " + str(psutil.virtual_memory().percent) + "%"
-		self.ids.RAM.text = ": " + str(round(psutil.virtual_memory().total/1024/1024/1024, 2)) + "GB"
+		try:
+			self.ids.CPU.text = "CPU: " + str(psutil.cpu_percent()) + "%"
+			self.ids.RAMpc.text = "RAM Used: " + str(psutil.virtual_memory().percent) + "%"
+		except:
+			pass
+		#self.ids.RAM.text = ": " + str(round(psutil.virtual_memory().total/1024/1024/1024, 2)) + "GB"
 
 	def perf_graph(self):
 		global graph
@@ -391,8 +394,11 @@ class MainThread(AnchorLayout):
 			graph['RAMpc'].append(psutil.virtual_memory().percent)
 			RAMplot.points = [(i, j) for i, j in enumerate(graph['RAMpc'])]
 			cpuplot.points = [(i, j) for i, j in enumerate(graph['cpu'])]
-			self.ramgraph.add_plot(RAMplot)
-			self.cpugraph.add_plot(cpuplot)
+			try:
+				self.ramgraph.add_plot(RAMplot)
+				self.cpugraph.add_plot(cpuplot)
+			except:
+				pass
 			#print (graph['cpu'])
 			time.sleep(0.6)
 
@@ -406,14 +412,9 @@ class MainThread(AnchorLayout):
 
 class MainApp(App):
 
-
-
-
 	def build(self):
-
 		self.settings_cls = MySettings
 		self.icon = 'music.png'
-
 		build = Builder.load_file('carputer.ky')
 		build.add_widget(PlayButtons())
 		build.add_widget(VolumeSlider())
@@ -435,41 +436,10 @@ class MainApp(App):
 		self.root.ids.settingsscreen.add_widget(s)
 
 
-
-
 	def build_settings(self,settings):
-		json_settings = json.dumps([
-			{'type': 'slider',
-			'title': 'Startup Volume',
-			'desc': 'Set the default startup volume for the picarputer',
-			'key': 'startupvolume',
-			'section': 'General'},
-			{'type': 'dynamic_options',
-			'title': 'Bluetooth Devices',
-			'desc': 'List and connect to compatible Bluetooth devices',
-			'section': 'General',
-			'key': 'bt_list',
-			'function_string': 'libs.btdevices.get_bluetooth_devices'},
-			{'type': 'dynamic_options',
-			'title': "Screen Resolution",
-			'desc': "Set the screen resolution",
-			'section':'General',
-			'key': 'resolutions',
-			'function_string': 'libs.initialize.supported_res'},
-			{'type': 'bool',
-			'title': 'Fullscreen',
-			'desc': 'Set window to be Fullscreen or Windowed',
-			'section': 'General',
-			'key':'fullscreen'},
-			{'type':'dynamic_options',
-			'title': 'Wallpaper',
-			'desc': 'Set your Wallpaper',
-			'section':'General',
-			'key':'wallpaper',
-			'function_string': 'libs.initialize.get_wallpapers'}
-
-			])
-		settings.add_json_panel("General", self.config, data=json_settings)
+		#pull from settings.py
+		data = settings.json_settings
+		settings.add_json_panel("General", self.config, data=data)
 
 
 	def on_config_change(self,config,section,key,value):

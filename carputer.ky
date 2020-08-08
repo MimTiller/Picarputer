@@ -8,10 +8,10 @@ MainThread:
 	cpugraph:cpugraph
 	ramgraph:ramgraph
 
-
 	AnchorLayout:
 		anchor_x: 'center'
 		anchor_y: 'center'
+
 		WallPaper:
 			id: wallpp
 			source: self.wallpaper_selection
@@ -22,6 +22,7 @@ MainThread:
 			size_hint_x: None
 			width: self.parent.width
 			height: self.parent.width/self.image_ratio
+
 		#Main Screens
 		ScreenManagement:
 			transition: SlideTransition()
@@ -86,36 +87,38 @@ MainThread:
 			PerfScreen:
 				name: 'perf'
 				BoxLayout:
-					size_hint: 0.96, 1
-					Graph:
-						size_hint: 0.24, 1
-						id: cpugraph
-					Graph:
-						size_hint: 0.24, 1
-						id: ramgraph
-					Graph:
-						size_hint: 0.24, 1
-						id: netupgraph
-					Graph:
-						size_hint: 0.24, 1
-						id: netdowngraph
-				BoxLayout:
-					Button:
-						id: CPU
-						size_hint: 0.22, 1
-						background_color: 0, 0, 0, 0
-					Button:
-						id: RAMpc
-						size_hint: 0.22, 1
-						background_color: 0, 0, 0, 0
-					Button:
-						id: netup
-						size_hint: 0.22, 1
-						background_color: 0, 0, 0, 0
-					Button:
-						id: netdown
-						size_hint: 0.22, 1
-						background_color: 0, 0, 0, 0
+					size_hint: 0.95, 1
+					orientation: 'vertical'
+					BoxLayout:
+						Graph:
+							size_hint: 0.24, 1
+							id: cpugraph
+						Graph:
+							size_hint: 0.24, 1
+							id: ramgraph
+						Graph:
+							size_hint: 0.24, 1
+							id: netupgraph
+						Graph:
+							size_hint: 0.24, 1
+							id: netdowngraph
+					BoxLayout:
+						Button:
+							id: CPU
+							size_hint: 0.22, 1
+							background_color: 0, 0, 0, 0
+						Button:
+							id: RAMpc
+							size_hint: 0.22, 1
+							background_color: 0, 0, 0, 0
+						Button:
+							id: netup
+							size_hint: 0.22, 1
+							background_color: 0, 0, 0, 0
+						Button:
+							id: netdown
+							size_hint: 0.22, 1
+							background_color: 0, 0, 0, 0
 
 			SettingsScreen:
 				name: 'settings'
@@ -136,11 +139,11 @@ MainThread:
 						on_release:
 							root.slide_screen(self.name,"music")
 						Image:
-							source: 'data/icons/audio.png'
+							source: 'data/icons/audio2.png'
 							center_x: self.parent.center_x
 							center_y: self.parent.center_y
-							size: 60, 60
-							allow_stretch: True
+							size_hint: 0.5, 0.5
+
 
 
 					Button: #OBDII button
@@ -151,7 +154,7 @@ MainThread:
 							source: 'data/icons/obd2.png'
 							center_x: self.parent.center_x
 							center_y: self.parent.center_y
-							size: 60, 60
+							size_hint: 0.8, 0.8
 							allow_stretch: True
 
 					Button: #PerfScreen
@@ -162,7 +165,7 @@ MainThread:
 							source: 'data/icons/perf.png'
 							center_x: self.parent.center_x
 							center_y: self.parent.center_y
-							size: 60, 60
+							size_hint: 0.8, 0.8
 							allow_stretch: True
 					Button:  #settings button
 						name: 4
@@ -173,7 +176,7 @@ MainThread:
 							source:'data/icons/settings.png'
 							center_x: self.parent.center_x
 							center_y: self.parent.center_y
-							size: 60, 60
+							size_hint: 0.8, 0.8
 							allow_stretch: True
 
 			PlayButtons:
