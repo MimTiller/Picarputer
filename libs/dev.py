@@ -1,40 +1,41 @@
+
+import kivy
+kivy.require('1.8.1')
+
 from kivy.app import App
-from functools import partial
-from kivy.uix.button import Button
-from kivy.resources import resource_find
-from kivy.garden.notification import Notification
+from kivy.lang import Builder
 
+root = Builder.load_string('''
+<Separator@Widget>:
+    canvas:
+        Color:
+            rgba: 1, 1, 1, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+<HSeparator@Separator>:
+    size_hint_y: None
+    height: dp(2)
+<VSeparator@Separator>:
+    size_hint_x: None
+    width: dp(2)
+BoxLayout:
+    Widget
+    VSeparator
+    Widget
+    VSeparator
+    BoxLayout:
+        orientation: 'vertical'
+        Widget
+        HSeparator
+        Widget
+        HSeparator
+        Widget
+''')
 
-class Notifier(Button):
-    def __init__(self, **kwargs):
-        super(Notifier, self).__init__(**kwargs)
-        self.bind(on_release=self.show_notification)
-
-    def printer(self, *args):
-        print(args)
-
-    def show_notification(self, *args):
-        # open default notification
-        Notification().open(
-            title='Kivy Notification',
-            message='Hello from the other side?',
-            timeout=5,
-            icon=resource_find('data/logo/kivy-icon-128.png'),
-            on_stop=partial(self.printer, 'Notification closed')
-        )
-
-        # open notification with layout in kv
-        Notification().open(
-            title='Kivy Notification',
-            message="I'm a Button!",
-            kv="Button:\n    text: app.message"
-        )
-
-
-class KivyNotification(App):
+class TestApp(App):
     def build(self):
-        return Notifier()
-
+        return root
 
 if __name__ == '__main__':
-    KivyNotification().run()
+    TestApp().run()

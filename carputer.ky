@@ -2,15 +2,32 @@
 #:import MeshLinePlot kivy.garden.graph.MeshLinePlot
 #:import isfile os.path.isfile
 
+
+
 MainThread:
+
+	#variables
 	album_art:album_art
 	slider:slider
 	cpugraph:cpugraph
 	ramgraph:ramgraph
 
+	#layout
 	AnchorLayout:
 		anchor_x: 'center'
 		anchor_y: 'center'
+		#templates
+		Separator:
+			canvas:
+				Color:
+					rgba: 1, 1, 1, 1
+				Rectangle:
+					pos: self.pos
+					size: self.size
+		HSeparator@Separator:
+			size_hint_y: None
+			height: dp(2)
+
 
 		WallPaper:
 			id: wallpp
@@ -124,6 +141,30 @@ MainThread:
 				name: 'settings'
 				BoxLayout:
 					id: settingsscreen
+		Notify:
+			BoxLayout:
+				canvas.before:
+					Color:
+						rgba: 0.7,0.7,0.7,0.7
+					Rectangle:
+						pos: self.pos
+						size: self.size
+
+				id: notify
+				orientation: 'vertical'
+				pos_hint: {'x':1,'y':0.12}
+
+				size_hint: .35, .1
+				Label:
+					id: notifytitle
+					halign: 'left'
+					text_size: self.size
+					size_hint: 1, 0.3
+				Hseparator
+				Label:
+					id: notifymessage
+					text_size: self.size
+					halign: 'left'
 
 		#Bottom Screen selectors
 		Menu:
@@ -131,6 +172,7 @@ MainThread:
 				anchor_x: 'center'
 				anchor_y: 'bottom'
 				BoxLayout:
+					id: menulayout
 					orientation: 'horizontal'
 					size_hint: 1, .12 #define percentage of screen for quickeys width,height
 
@@ -142,7 +184,7 @@ MainThread:
 							source: 'data/icons/audio2.png'
 							center_x: self.parent.center_x
 							center_y: self.parent.center_y
-							size_hint: 0.5, 0.5
+							size: menulayout.height - 30, menulayout.width - 30
 
 
 
@@ -154,8 +196,7 @@ MainThread:
 							source: 'data/icons/obd2.png'
 							center_x: self.parent.center_x
 							center_y: self.parent.center_y
-							size_hint: 0.8, 0.8
-							allow_stretch: True
+							size: menulayout.height + 20 , menulayout.width + 20
 
 					Button: #PerfScreen
 						name: 3
@@ -165,8 +206,7 @@ MainThread:
 							source: 'data/icons/perf.png'
 							center_x: self.parent.center_x
 							center_y: self.parent.center_y
-							size_hint: 0.8, 0.8
-							allow_stretch: True
+							size: menulayout.height, menulayout.width
 					Button:  #settings button
 						name: 4
 						on_release:
@@ -176,8 +216,7 @@ MainThread:
 							source:'data/icons/settings.png'
 							center_x: self.parent.center_x
 							center_y: self.parent.center_y
-							size_hint: 0.8, 0.8
-							allow_stretch: True
+							size: menulayout.height , menulayout.width
 
 			PlayButtons:
 				anchor_x: 'center'
@@ -287,9 +326,3 @@ MainThread:
 					orientation: 'vertical'
 					id: volumeslider
 					on_value: root.volslider(self.value)
-	FloatLayout:
-		Button:
-			id: notify
-			size_hint: .4, .1
-			pos_hint: {'x':1,'y':0.12}
-			text: "push me"

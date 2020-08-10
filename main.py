@@ -49,7 +49,7 @@ from libs.settings import SettingSlider, SettingDynamicOptions, MySettings
 from threading import Thread
 from collections import defaultdict
 from os import path
-
+from functools import partial
 
 #==================CONFIGURATION========================================#
 									    								#Force a resolution, or just comment out
@@ -97,8 +97,10 @@ class Scroller2(FloatLayout):
 	pass
 class BigScreenInfo(BoxLayout):
 	pass
-
-
+class Notify(FloatLayout):
+	pass
+class Separator(Widget):
+	pass
 #get current screen resolution
 x = initialize.current_res().split('x')
 height = int(x[1])
@@ -163,17 +165,23 @@ class MainThread(AnchorLayout):
 		self.wallpaperlist = ListProperty()
 		self.currentscreen = 1
 
+	def hide_notify(self,widget,*args):
+		notification = widget.root.ids.notify
+		anim = Animation(pos_hint={'x':1},duration=.3)
+		anim.start(notification)
+
+	def notify(self,widget,title,message,timeout):
+		notification = widget.root.ids.notify
+		msg = widget.root.ids.notifymessage
+		msg.text = str(message)
+		ttl = widget.root.ids.notifytitle
+		ttl.text = str(title)
+		anim = Animation(pos_hint={'x':0.65},duration=.3)
+		anim.start(notification)
+		Clock.schedule_once(partial(self.hide_notify,self,widget),timeout)
 
 
-	def notify(self,message,timeout):
-		#self.ids.notify.text = message
-		#anim = Animation(pos_hint={'x':.4,'y':0.12},duration=.5)
-		#anim.start(self.ids.notify)
-		#Clock.schedule_once(self.hide_notify(),timeout)
-		pass
-	def hide_notify(self):
-		Animation(pos_hint={'x':1})
-		anim.start(self.ids.notify)
+
 
 
 	def slide_screen(self,instance,screenname):
@@ -419,18 +427,17 @@ class MainApp(App):
 		build.add_widget(PlayButtons())
 		build.add_widget(VolumeSlider())
 		build.add_widget(BigScreenInfo())
-		build.add_widget(Scroller1())
-		build.add_widget(Scroller2())
+		#build.add_widget(Scroller1())
+		#build.add_widget(Scroller2())
 		return build
 
 	def build_config(self,config):
-		config.setdefaults("General", {
-			"startupvolume": 75,
-			"bt_list": "Click to connect...",
+		config.setdefaults("Default", {
 			"resolutions": initialize.current_res(),
 			"fullscreen": '1',
-			"wallpaper": "blackbox.jpg"
-		})
+			"wallpaper": "blackbox.jpg",
+			"startupvolume": 75,
+			"bt_list": "Click to connect..."})
 	def on_start(self):
 		s = self.create_settings()
 		self.root.ids.settingsscreen.add_widget(s)
@@ -439,15 +446,15 @@ class MainApp(App):
 	def build_settings(self,settings):
 		#pull from settings.py
 		data = settings.json_settings
-		settings.add_json_panel("General", self.config, data=data)
+		settings.add_json_panel("Default", self.config, data=data)
 
 
 	def on_config_change(self,config,section,key,value):
-		MT = MainThread()
+		title = "Settings"
 		if key == "startupvolume":
 			self.startupvolume = int(value)
-
-			MT.notify("Volume changed to {}".format(value),2)
+			message = "Volume changed to {}".format(value)
+			MainThread.notify(MainThread,self,title=title,message=message,timeout=2)
 		if key == "bt_list":
 			message = "Connected to {}".format(value)
 
