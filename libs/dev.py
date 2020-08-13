@@ -1,41 +1,32 @@
+import bluetooth
 
-import kivy
-kivy.require('1.8.1')
+mac = "94:8B:C1:F6:3F:AD"
 
-from kivy.app import App
-from kivy.lang import Builder
 
-root = Builder.load_string('''
-<Separator@Widget>:
-    canvas:
-        Color:
-            rgba: 1, 1, 1, 1
-        Rectangle:
-            pos: self.pos
-            size: self.size
-<HSeparator@Separator>:
-    size_hint_y: None
-    height: dp(2)
-<VSeparator@Separator>:
-    size_hint_x: None
-    width: dp(2)
-BoxLayout:
-    Widget
-    VSeparator
-    Widget
-    VSeparator
-    BoxLayout:
-        orientation: 'vertical'
-        Widget
-        HSeparator
-        Widget
-        HSeparator
-        Widget
-''')
+def connect (btaddr):
+    port = 2
+    sock=bluetooth.BluetoothSocket(bluetooth.RFCOMM)
+    print("Trying to pair to", btaddr)
+    sock.connect((btaddr, port))
+    a = "a"
+    while a != 'quit':
+        a = input("<<< ")
+        sock.send(a)
+    sock.close()
 
-class TestApp(App):
-    def build(self):
-        return root
+def connect_l2cap(btaddr):
+	sock=bluetooth.BluetoothSocket(bluetooth.L2CAP)
+	print("Trying to pair to", btaddr)
+	sock.connect((btaddr, port))
+	a = "a"
+	while a != 'quit':
+		a = input("<<< ")
+		sock.send(a)
+	sock.close()
 
-if __name__ == '__main__':
-    TestApp().run()
+
+def discover_services():
+	sock=bluetooth.find_service(name=None, uuid=None)
+	for x in sock:
+		print (x)
+connect_l2cap(mac)

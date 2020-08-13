@@ -1,5 +1,5 @@
 import bluetooth, time
-
+import dbus, dbus.mainloop.glib, sys
 def get_bluetooth_devices():
 	print ("checking available devices....")
 	nearby_devices = bluetooth.discover_devices(lookup_names = True)
@@ -17,6 +17,7 @@ def bluetooth_search():
 
 def bluetooth_connect():
 	pass
+
 
 def bt_song_info(interface, changed, invalidated):
     if interface != 'org.bluez.MediaPlayer1':

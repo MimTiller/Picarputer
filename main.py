@@ -99,8 +99,7 @@ class BigScreenInfo(BoxLayout):
 	pass
 class Notify(FloatLayout):
 	pass
-class Separator(Widget):
-	pass
+
 #get current screen resolution
 x = initialize.current_res().split('x')
 height = int(x[1])

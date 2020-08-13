@@ -2,7 +2,16 @@
 #:import MeshLinePlot kivy.garden.graph.MeshLinePlot
 #:import isfile os.path.isfile
 
-
+<Separator@Widget>:
+	canvas:
+		Color:
+			rgba: 1, 1, 1, 1
+		Rectangle:
+			pos: self.pos
+			size: self.size
+<Hseparator@Separator>:
+	size_hint_y: None
+	height: dp(2)
 
 MainThread:
 
@@ -16,17 +25,6 @@ MainThread:
 	AnchorLayout:
 		anchor_x: 'center'
 		anchor_y: 'center'
-		#templates
-		Separator:
-			canvas:
-				Color:
-					rgba: 1, 1, 1, 1
-				Rectangle:
-					pos: self.pos
-					size: self.size
-		HSeparator@Separator:
-			size_hint_y: None
-			height: dp(2)
 
 
 		WallPaper:
@@ -141,11 +139,13 @@ MainThread:
 				name: 'settings'
 				BoxLayout:
 					id: settingsscreen
+
+
 		Notify:
 			BoxLayout:
 				canvas.before:
 					Color:
-						rgba: 0.7,0.7,0.7,0.7
+						rgba: 0.7,0.7,0.7,0.5
 					Rectangle:
 						pos: self.pos
 						size: self.size
@@ -320,6 +320,7 @@ MainThread:
 					size_hint: 1, 0.05
 					text: str(int(volumeslider.value))
 					background_color:(1,1,1,0)
+
 				Slider:
 					cursor_size: 20, 20
 					value: int(root.volstartup())
