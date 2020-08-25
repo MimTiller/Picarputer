@@ -28,6 +28,14 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.label import Label
 from kivy.uix.spinner import Spinner
 from kivy.uix.popup import Popup
+
+#kivyMD imports
+from kivymd.app import MDApp
+from kivymd.uix.snackbar import Snackbar
+from kivymd.toast import toast
+from kivymd.uix.screen import MDScreen
+from kivymd.uix.bottomnavigation import *
+from kivymd.uix.boxlayout import MDBoxLayout
 #misc
 
 
@@ -75,7 +83,7 @@ graph = []
 #-----------------------------#KIVY#------------------------------------
 class ScreenManagement(ScreenManager):
     pass
-class Menu(Screen):
+class Menu(AnchorLayout):
 	pass
 class MusicScreen(Screen):
 	pass
@@ -87,7 +95,7 @@ class PerfScreen(Screen):
 	pass
 class Root(Screen):
 	pass
-class VolumeSlider(BoxLayout):
+class VolumeSlider(AnchorLayout):
 	pass
 class PlayButtons(AnchorLayout):
 	pass
@@ -130,17 +138,16 @@ class WallPaper(Image):
 	wpd = str('data/wallpapers/' + wallpaper)
 	wallpaper_selection = wpd
 
-
+class NotificationSnackbar(Snackbar):
+	icon = StringProperty()
 
 #-----------------------MAIN-FUNCTIONS---------------------------------#
-class MainThread(AnchorLayout):
+class MainThread(FloatLayout):
 	instance = vlc.Instance()
 	player = instance.media_player_new("C:/test.wav")
 	media = instance.media_new_path("unknown")
 	player.set_media(media)
 	player = vlc.MediaPlayer("/path/to/file.flac")
-
-
 
 	def __init__(self, **kwargs):
 		super(MainThread ,self).__init__(**kwargs)
@@ -164,6 +171,10 @@ class MainThread(AnchorLayout):
 		self.wallpaperlist = ListProperty()
 		self.currentscreen = 1
 
+
+	def snackbar(self,widget,title,message,timeout):
+		toast(message)
+
 	def hide_notify(self,widget,*args):
 		notification = widget.root.ids.notify
 		anim = Animation(pos_hint={'x':1},duration=.3)
@@ -175,12 +186,9 @@ class MainThread(AnchorLayout):
 		msg.text = str(message)
 		ttl = widget.root.ids.notifytitle
 		ttl.text = str(title)
-		anim = Animation(pos_hint={'x':0.65},duration=.3)
+		anim = Animation(pos_hint={'x':0.75},duration=.3)
 		anim.start(notification)
 		Clock.schedule_once(partial(self.hide_notify,self,widget),timeout)
-
-
-
 
 
 	def slide_screen(self,instance,screenname):
@@ -193,7 +201,6 @@ class MainThread(AnchorLayout):
 		else:
 			pass
 		self.ids.st.current = screenname
-
 
 
 	def playpause(self):
@@ -417,9 +424,11 @@ class MainThread(AnchorLayout):
 		graphdaemon.start()
 #_______________________________#MAIN APP#______________________________
 
-class MainApp(App):
+class MainApp(MDApp):
 
 	def build(self):
+		self.theme_cls.primary_palette = "Blue"
+		self.theme_cls.theme_style = "Dark"
 		self.settings_cls = MySettings
 		self.icon = 'music.png'
 		build = Builder.load_file('carputer.ky')
@@ -453,6 +462,7 @@ class MainApp(App):
 		if key == "startupvolume":
 			self.startupvolume = int(value)
 			message = "Volume changed to {}".format(value)
+			MainThread.snackbar(MainThread,self,title=title,message=message,timeout=2)
 			MainThread.notify(MainThread,self,title=title,message=message,timeout=2)
 		if key == "bt_list":
 			message = "Connected to {}".format(value)

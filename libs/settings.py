@@ -83,9 +83,8 @@ class SettingSlider(SettingItem):
 
 
 
-class MySettings(SettingsWithSidebar):
+class MySettings(SettingsWithNoMenu):
 	json_settings = json.dumps([
-
 		{'type': 'dynamic_options',
 		'title': "Screen Resolution",
 		'desc': "Set the screen resolution",
@@ -117,6 +116,7 @@ class MySettings(SettingsWithSidebar):
 		'key': 'bt_list',
 		'function_string': 'libs.btdevices.get_bluetooth_devices'}
 		])
+
 	def __init__(self,*args,**kargs):
 		super(MySettings,self).__init__(*args,**kargs)
 		Color=(0,0,0,0)

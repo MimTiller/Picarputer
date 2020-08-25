@@ -5,7 +5,7 @@
 <Separator@Widget>:
 	canvas:
 		Color:
-			rgba: 1, 1, 1, 1
+			rgba: .9, .9, .9, .5
 		Rectangle:
 			pos: self.pos
 			size: self.size
@@ -24,9 +24,9 @@ MainThread:
 	#layout
 	AnchorLayout:
 		anchor_x: 'center'
-		anchor_y: 'center'
+		anchor_y: 'bottom'
 
-
+		#wallpaper, works on every screen minus settings screen
 		WallPaper:
 			id: wallpp
 			source: self.wallpaper_selection
@@ -42,8 +42,7 @@ MainThread:
 		ScreenManagement:
 			transition: SlideTransition()
 			id: st
-			size_hint: 1, 0.75
-
+			size_hint: 1, 0.89
 			MusicScreen:
 				name: 'music'
 				FloatLayout:
@@ -60,7 +59,6 @@ MainThread:
 					pos_hint: {"x": 0, 'y': 0.0}
 					BoxLayout:
 						orientation: 'vertical'
-
 						Label:
 							id: bigscreentitle
 							font_size: 40
@@ -136,87 +134,74 @@ MainThread:
 							background_color: 0, 0, 0, 0
 
 			SettingsScreen:
+				icon: 'settings'
 				name: 'settings'
 				BoxLayout:
 					id: settingsscreen
 
 
 		Notify:
-			BoxLayout:
+			MDBoxLayout:
 				canvas.before:
 					Color:
-						rgba: 0.7,0.7,0.7,0.5
-					Rectangle:
+						rgba: 0.3,0.3,0.3,0.7
+					RoundedRectangle:
 						pos: self.pos
 						size: self.size
-
+						radius: [10,]
 				id: notify
 				orientation: 'vertical'
 				pos_hint: {'x':1,'y':0.12}
+				size_hint: .25, .07
 
-				size_hint: .35, .1
-				Label:
+				MDLabel:
+					color: 1,1,1,1
 					id: notifytitle
-					halign: 'left'
-					text_size: self.size
-					size_hint: 1, 0.3
+					halign: 'center'
+					text_size: self.texture_size
+					size_hint: 1, 0.5
 				Hseparator
-				Label:
+				MDLabel:
+					color: 1,1,1,1
 					id: notifymessage
-					text_size: self.size
-					halign: 'left'
-
+					text_size: self.texture_size
+					halign: 'center'
+					valign: 'center'
 		#Bottom Screen selectors
 		Menu:
-			AnchorLayout:
-				anchor_x: 'center'
-				anchor_y: 'bottom'
-				BoxLayout:
-					id: menulayout
-					orientation: 'horizontal'
-					size_hint: 1, .12 #define percentage of screen for quickeys width,height
+			anchor_x: 'center'
+			anchor_y: 'bottom'
+			MDBoxLayout:
+				adaptive_width: True
+				id: menulayout
+				orientation: 'horizontal'
+				size_hint: 1, .12 #define percentage of screen for quickeys width,height
 
-					Button:  #music button
-						name: 1
-						on_release:
-							root.slide_screen(self.name,"music")
-						Image:
-							source: 'data/icons/audio2.png'
-							center_x: self.parent.center_x
-							center_y: self.parent.center_y
-							size: menulayout.height - 30, menulayout.width - 30
+				MDRectangleFlatIconButton:  #music button
+					icon: 'music-note'
+					name: 1
+					on_release:
+						root.slide_screen(self.name,"music")
 
 
+				MDRectangleFlatIconButton: #OBDII button
+					icon: 'car-cruise-control'
+					name: 2
+					on_release:
+						root.slide_screen(self.name,"obd")
 
-					Button: #OBDII button
-						name: 2
-						on_release:
-							root.slide_screen(self.name,"obd")
-						Image:
-							source: 'data/icons/obd2.png'
-							center_x: self.parent.center_x
-							center_y: self.parent.center_y
-							size: menulayout.height + 20 , menulayout.width + 20
+				MDRectangleFlatIconButton: #PerfScreen
+					icon: 'tune'
+					name: 3
+					on_release:
+						root.slide_screen(self.name,"perf")
 
-					Button: #PerfScreen
-						name: 3
-						on_release:
-							root.slide_screen(self.name,"perf")
-						Image:
-							source: 'data/icons/perf.png'
-							center_x: self.parent.center_x
-							center_y: self.parent.center_y
-							size: menulayout.height, menulayout.width
-					Button:  #settings button
-						name: 4
-						on_release:
-							#app.open_settings()
-							root.slide_screen(self.name,"settings")
-						Image:
-							source:'data/icons/settings.png'
-							center_x: self.parent.center_x
-							center_y: self.parent.center_y
-							size: menulayout.height , menulayout.width
+				MDRectangleFlatIconButton:  #settings button
+					icon: 'settings'
+					name: 4
+					on_release:
+						#app.open_settings()
+						root.slide_screen(self.name,"settings")
 
 			PlayButtons:
 				anchor_x: 'center'
@@ -298,7 +283,7 @@ MainThread:
 									id: songinformation
 									background_color:(0.5,0.5,0.5,0.5)
 									font_size: songinformation.height/2
-								Slider:
+								MDProgressBar:
 									id: slider
 									size_hint: 1, 0.35
 									cursor_size: 20, 20
@@ -310,20 +295,15 @@ MainThread:
 								text: "--:--"
 								font_size: songlength.height/2
 
-			VolumeSlider:
-				id: volumecontrol
-				size_hint: .05 , 0.78
-				pos_hint: {"x": 0.95, 'y':0.11}
-				orientation: 'vertical'
-				Label:
-					font_size: 20
-					size_hint: 1, 0.05
-					text: str(int(volumeslider.value))
-					background_color:(1,1,1,0)
+	VolumeSlider:
+		id: volumecontrol
+		size_hint: .05 , 0.78
+		pos_hint: {"x": 0.93, 'y':0.11}
+		orientation: 'vertical'
 
-				Slider:
-					cursor_size: 20, 20
-					value: int(root.volstartup())
-					orientation: 'vertical'
-					id: volumeslider
-					on_value: root.volslider(self.value)
+		MDSlider:
+			cursor_size: 20, 20
+			value: int(root.volstartup())
+			orientation: 'vertical'
+			id: volumeslider
+			on_value: root.volslider(self.value)
