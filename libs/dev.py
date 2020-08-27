@@ -1,79 +1,96 @@
-from kivymd.app import MDApp
 from kivy.lang import Builder
-from kivy.factory import Factory
+from kivy.properties import StringProperty
+from kivy.uix.screenmanager import Screen
 
-from kivymd.toast import toast
-from kivymd.theming import ThemeManager
-from kivymd.uix.useranimationcard import MDUserAnimationCard
-from kivymd.uix.button import MDIconButton
-from kivymd.uix.list import ILeftBodyTouch
-
-# Your content for a contact card.
-Builder.load_string('''
-#:import get_hex_from_color kivy.utils.get_hex_from_color
+from kivymd.icon_definitions import md_icons
+from kivymd.app import MDApp
+from kivymd.uix.list import OneLineIconListItem
 
 
-<TestAnimationCard@BoxLayout>
-    orientation: 'vertical'
-    #padding: dp(10)
-    #spacing: dp(10)
-    #size_hint_y: None
-    height: self.minimum_height
+Builder.load_string(
+    '''
+#:import images_path kivymd.images_path
+
+
+<CustomOneLineIconListItem>:
+
+    IconLeftWidget:
+        icon: root.icon
+
+
+<PreviousMDIcons>:
 
     BoxLayout:
-        #size_hint_y: None
-        height: self.minimum_height
+        orientation: 'vertical'
+        spacing: dp(10)
+        padding: dp(20)
 
-        Widget:
-        MDRoundFlatButton:
-            text: "Free call"
-        Widget:
-        MDRoundFlatButton:
-            text: "Free message"
-        Widget:
+        BoxLayout:
+            size_hint_y: None
+            height: self.minimum_height
 
-    OneLineIconListItem:
-        text: "Video call"
-        IconLeftSampleWidget:
-            icon: 'camera-front-variant'
+            MDIconButton:
+                icon: 'magnify'
 
-    TwoLineIconListItem:
-        text: "Call Viber Out"
-        secondary_text: "[color=%s]Advantageous rates for calls[/color]" % get_hex_from_color(app.theme_cls.primary_color)
-        IconLeftSampleWidget:
-            icon: 'phone'
+            MDTextField:
+                id: search_field
+                hint_text: 'Search icon'
+                on_text: root.set_list_md_icons(self.text, True)
 
-    TwoLineIconListItem:
-        text: "Call over mobile network"
-        secondary_text: "[color=%s]Operator's tariffs apply[/color]" % get_hex_from_color(app.theme_cls.primary_color)
-        IconLeftSampleWidget:
-            icon: 'remote'
-''')
+        RecycleView:
+            id: rv
+            key_viewclass: 'viewclass'
+            key_size: 'height'
 
-
-class IconLeftSampleWidget(ILeftBodyTouch, MDIconButton):
-    pass
+            RecycleBoxLayout:
+                padding: dp(10)
+                default_size: None, dp(48)
+                default_size_hint: 1, None
+                size_hint_y: None
+                height: self.minimum_height
+                orientation: 'vertical'
+'''
+)
 
 
-class Example(MDApp):
-    title = "Example Animation Card"
+class CustomOneLineIconListItem(OneLineIconListItem):
+    icon = StringProperty()
 
+
+class PreviousMDIcons(Screen):
+
+    def set_list_md_icons(self, text="", search=False):
+        '''Builds a list of icons for the screen MDIcons.'''
+
+        def add_icon_item(name_icon):
+            self.ids.rv.data.append(
+                {
+                    "viewclass": "CustomOneLineIconListItem",
+                    "icon": name_icon,
+                    "text": name_icon,
+                    "callback": lambda x: x,
+                }
+            )
+
+        self.ids.rv.data = []
+        for name_icon in md_icons.keys():
+            if search:
+                if text in name_icon:
+                    add_icon_item(name_icon)
+            else:
+                add_icon_item(name_icon)
+
+
+class MainApp(MDApp):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.user_animation_card = None
+        self.screen = PreviousMDIcons()
 
     def build(self):
-        def main_back_callback():
-            toast('Close card')
+        return self.screen
 
-        if not self.user_animation_card:
-            self.user_animation_card = MDUserAnimationCard(
-                user_name="Lion Lion",
-                path_to_avatar="./assets/african-lion-951778_1280.jpg",
-                callback=main_back_callback)
-            self.user_animation_card.box_content.add_widget(
-                Factory.TestAnimationCard())
-        self.user_animation_card.open()
+    def on_start(self):
+        self.screen.set_list_md_icons()
 
 
-Example().run()
+MainApp().run()

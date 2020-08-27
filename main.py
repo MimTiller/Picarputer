@@ -36,9 +36,28 @@ from kivymd.toast import toast
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.bottomnavigation import *
 from kivymd.uix.boxlayout import MDBoxLayout
+from kivymd.uix.button import *
+from kivymd.uix.behaviors import (
+    CircularElevationBehavior,
+    CircularRippleBehavior,
+    CommonElevationBehavior,
+    RectangularElevationBehavior,
+    RectangularRippleBehavior,
+    SpecificBackgroundColorBehavior,)
+from kivymd.theming import ThemableBehavior
+from kivy.uix.behaviors import ButtonBehavior
+from kivymd.theming import ThemeManager
 #misc
 
-
+from kivy.properties import (
+    BooleanProperty,
+    BoundedNumericProperty,
+    DictProperty,
+    ListProperty,
+    NumericProperty,
+    ObjectProperty,
+    OptionProperty,
+    StringProperty,)
 from kivy.logger import Logger
 from kivy.lang import Builder
 from kivy.properties import NumericProperty, StringProperty, BooleanProperty, ListProperty, ObjectProperty
@@ -54,6 +73,7 @@ import dataset, usb, psutil, importlib, json, concurrent.futures
 
 from libs import tagger, audio, vlc, btdevices, initialize, settings
 from libs.settings import SettingSlider, SettingDynamicOptions, MySettings
+
 from threading import Thread
 from collections import defaultdict
 from os import path
@@ -75,25 +95,22 @@ global graph
 #global wallpaper
 graph = []
 
-
-
-
-
-
+class IconButton(ButtonBehavior,BoxLayout):
+	pass
 #-----------------------------#KIVY#------------------------------------
 class ScreenManagement(ScreenManager):
     pass
 class Menu(AnchorLayout):
 	pass
-class MusicScreen(Screen):
+class MusicScreen(MDScreen):
 	pass
-class SettingsScreen(Screen):
+class SettingsScreen(MDScreen):
     pass
-class OBDIIScreen(Screen):
+class OBDIIScreen(MDScreen):
 	pass
-class PerfScreen(Screen):
+class PerfScreen(MDScreen):
 	pass
-class Root(Screen):
+class Root(MDScreen):
 	pass
 class VolumeSlider(AnchorLayout):
 	pass
@@ -192,10 +209,15 @@ class MainThread(FloatLayout):
 
 
 	def slide_screen(self,instance,screenname):
-		if instance > self.currentscreen:
+		for button in ['music','obd','perf','settings']:
+			self.ids[button].text_color = MainApp().theme_cls.primary_color
+			self.ids[str(button + "label")].color = MainApp().theme_cls.primary_color
+		self.ids[screenname].text_color = MainApp().theme_cls.primary_light
+		self.ids[str(screenname + "label")].color = MainApp().theme_cls.primary_light
+		if int(instance) > int(self.currentscreen):
 			self.ids.st.transition = SlideTransition(direction="left")
 			self.currentscreen = instance
-		elif instance < self.currentscreen:
+		elif int(instance) < int(self.currentscreen):
 			self.ids.st.transition = SlideTransition(direction="right")
 			self.currentscreen = instance
 		else:
@@ -425,10 +447,11 @@ class MainThread(FloatLayout):
 #_______________________________#MAIN APP#______________________________
 
 class MainApp(MDApp):
-
-	def build(self):
+	def __init(self,**kwargs):
 		self.theme_cls.primary_palette = "Blue"
 		self.theme_cls.theme_style = "Dark"
+
+	def build(self):
 		self.settings_cls = MySettings
 		self.icon = 'music.png'
 		build = Builder.load_file('carputer.ky')

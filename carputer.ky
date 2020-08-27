@@ -9,9 +9,11 @@
 		Rectangle:
 			pos: self.pos
 			size: self.size
+
 <Hseparator@Separator>:
 	size_hint_y: None
 	height: dp(2)
+
 
 MainThread:
 
@@ -169,39 +171,127 @@ MainThread:
 					valign: 'center'
 		#Bottom Screen selectors
 		Menu:
-			anchor_x: 'center'
+			anchor_x: 'left'
 			anchor_y: 'bottom'
-			MDBoxLayout:
-				adaptive_width: True
-				id: menulayout
-				orientation: 'horizontal'
-				size_hint: 1, .12 #define percentage of screen for quickeys width,height
+	        BoxLayout:
+				canvas.before:
+					Color:
+						rgba: .4,.4,.4,0.9
+					Rectangle:
+						pos: self.pos
+						size: self.size
 
-				MDRectangleFlatIconButton:  #music button
-					icon: 'music-note'
-					name: 1
+				orientation:'horizontal'
+	            id: tabs
+	            size_hint: 1, 0.13
+
+				IconButton:
+					name: '1'
+					orientation: 'vertical'
+					size_hint: 0.25,None
+					pos_hint: {'x': 0, 'y':0}
 					on_release:
 						root.slide_screen(self.name,"music")
 
+					MDIconButton: #Music button
+						id: music
+						icon: 'music-note'
+						size_hint: None, 0.8
+						pos_hint: {'x': 0.35, 'y':0}
+						user_font_size: "64sp"
+						theme_text_color: "Custom"
+						text_color: app.theme_cls.primary_light
+						on_release:
+							root.slide_screen('1',"music")
 
-				MDRectangleFlatIconButton: #OBDII button
-					icon: 'car-cruise-control'
-					name: 2
+					MDLabel:
+						size_hint: 1, 0.15
+						id: musiclabel
+						font_style: 'H6'
+						halign: "center"
+						text: "Music"
+						color: app.theme_cls.primary_light
+
+				IconButton:
+					name: '2'
+					orientation: 'vertical'
+					size_hint: 0.25,None
+					pos_hint: {'x': 0.25, 'y':0}
 					on_release:
 						root.slide_screen(self.name,"obd")
 
-				MDRectangleFlatIconButton: #PerfScreen
-					icon: 'tune'
-					name: 3
+					MDIconButton: #OBDII button
+						id: obd
+						icon: 'car-cruise-control'
+						size_hint: None, 0.85
+						pos_hint: {'x': 0.35, 'y':0}
+						user_font_size: "64sp"
+						theme_text_color: "Custom"
+						text_color: app.theme_cls.primary_color
+						on_release:
+							root.slide_screen('2',"obd")
+
+					MDLabel:
+						size_hint: 1, 0.15
+						id: obdlabel
+						font_style: 'H6'
+						halign: "center"
+						text: "OBD2"
+						color: app.theme_cls.primary_color
+
+				IconButton:
+					name: '3'
+					orientation: 'vertical'
+					size_hint: 0.25,None
+					pos_hint: {'x': 0.5, 'y':0}
 					on_release:
 						root.slide_screen(self.name,"perf")
 
-				MDRectangleFlatIconButton:  #settings button
-					icon: 'settings'
-					name: 4
+					MDIconButton: #PerfScreen
+						id: perf
+						icon: 'tune'
+						size_hint: None, 0.8
+						pos_hint: {'x': 0.35, 'y':0}
+						user_font_size: "64sp"
+						theme_text_color: "Custom"
+						text_color: app.theme_cls.primary_color
+						on_release:
+							root.slide_screen('3',"perf")
+
+					MDLabel:
+						size_hint: 1, 0.15
+						id: perflabel
+						font_style: 'H6'
+						halign: "center"
+						text: "Performance"
+						color: app.theme_cls.primary_color
+
+				IconButton:
+					name: '4'
+					orientation: 'vertical'
+					size_hint: 0.25,None
+					pos_hint: {'x': 0.75, 'y':0}
 					on_release:
-						#app.open_settings()
 						root.slide_screen(self.name,"settings")
+
+					MDIconButton:  #settings button
+						id: settings
+						icon: 'settings'
+						size_hint: None, 0.8
+						pos_hint: {'x': 0.35, 'y':0}
+						user_font_size: "64sp"
+						theme_text_color: "Custom"
+						text_color: app.theme_cls.primary_color
+						on_release:
+							root.slide_screen('4',"settings")
+
+					MDLabel:
+						size_hint: 1, 0.15
+						id: settingslabel
+						font_style: 'H6'
+						halign: "center"
+						text: "Settings"
+						color: app.theme_cls.primary_color
 
 			PlayButtons:
 				anchor_x: 'center'
@@ -302,7 +392,9 @@ MainThread:
 		orientation: 'vertical'
 
 		MDSlider:
-			cursor_size: 20, 20
+			hint_bg_color: app.theme_cls.accent_color
+			hint_text_color: app.theme_cls.primary_color
+			hint_radius: 2
 			value: int(root.volstartup())
 			orientation: 'vertical'
 			id: volumeslider
