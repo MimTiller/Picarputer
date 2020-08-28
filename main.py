@@ -97,6 +97,8 @@ graph = []
 
 class IconButton(ButtonBehavior,BoxLayout):
 	pass
+
+
 #-----------------------------#KIVY#------------------------------------
 class ScreenManagement(ScreenManager):
     pass
@@ -125,33 +127,17 @@ class BigScreenInfo(BoxLayout):
 class Notify(FloatLayout):
 	pass
 
-#get current screen resolution
-x = initialize.current_res().split('x')
-height = int(x[1])
-width = int(x[0])
-config = ConfigParser()
-config.read('main.ini')
-conf_res = config.get('General', 'resolutions').split('x')
-confh = int(conf_res[1])
-confw = int(conf_res[0])
 
-#Set Resolution
-Window.size = confw,confh
-#Window.maximize()
-
-#check Fullscreen
-fs = config.get('General', 'fullscreen')
-if fs == "1":
-	Window.fullscreen = True
-elif fs == "0":
-	Window.fullscreen = False
 
 
 class WallPaper(Image):
 	wallpaper_selection = StringProperty()
 	config = ConfigParser()
 	config.read('main.ini')
-	wallpaper = config.get('General', 'wallpaper')
+	try:
+		wallpaper = config.get('Default', 'wallpaper')
+	except:
+		wallpaper = "blackbox.jpg"
 	wpd = str('data/wallpapers/' + wallpaper)
 	wallpaper_selection = wpd
 
@@ -170,6 +156,7 @@ class MainThread(FloatLayout):
 		super(MainThread ,self).__init__(**kwargs)
 		Clock.schedule_interval(self.refresh, screenupdatetime)
 		Clock.schedule_once(self.start_thread,0)
+		Window.bind(on_resize=self.on_window_resize)
 		self.startupvolume = 75
 		#self.buttonlist=[]
 		#self.artistlist=[]
@@ -188,7 +175,14 @@ class MainThread(FloatLayout):
 		self.wallpaperlist = ListProperty()
 		self.currentscreen = 1
 
+	def on_window_resize(self,window,width,height):
+		self.menu_font_update()
 
+	def menu_font_update(self):
+		for button in ['musicicon','obdicon','perficon','settingsicon']:
+			print (button, self.ids[button].size)
+			icon = button[:-4]
+			self.ids[icon].user_font_size = self.ids[button].size[1]
 	def snackbar(self,widget,title,message,timeout):
 		toast(message)
 
@@ -381,7 +375,10 @@ class MainThread(FloatLayout):
 		self.player.audio_set_volume(int(value))
 
 	def volstartup(self):
-		volume = App.get_running_app().config.get('General','startupvolume')
+		try:
+			volume = App.get_running_app().config.get('Default','startupvolume')
+		except:
+			volume = 75
 		self.player.audio_set_volume(int(volume))
 		return int(volume)
 
@@ -451,6 +448,7 @@ class MainApp(MDApp):
 		self.theme_cls.primary_palette = "Blue"
 		self.theme_cls.theme_style = "Dark"
 
+
 	def build(self):
 		self.settings_cls = MySettings
 		self.icon = 'music.png'
@@ -465,13 +463,40 @@ class MainApp(MDApp):
 	def build_config(self,config):
 		config.setdefaults("Default", {
 			"resolutions": initialize.current_res(),
-			"fullscreen": '1',
+			"fullscreen": '0',
 			"wallpaper": "blackbox.jpg",
 			"startupvolume": 75,
 			"bt_list": "Click to connect..."})
+
+
+		try:
+			config = ConfigParser()
+			config.read('main.ini')
+			#Get config resolution
+			conf_res = config.get('Default', 'resolutions').split('x')
+			confh = int(conf_res[1])
+			confw = int(conf_res[0])
+			#Set Resolution
+			Window.size = confw,confh
+			#check Fullscreen
+			fs = config.get('Default', 'fullscreen')
+			if fs == "1":
+				Window.fullscreen = True
+			elif fs == "0":
+				Window.fullscreen = False
+		except:
+			#get current screen resolution
+			x = initialize.current_res().split('x')
+			height = int(x[1])
+			width = int(x[0])
+			Window.size = width,height
+			Window.fullscreen=False
+
+
 	def on_start(self):
 		s = self.create_settings()
 		self.root.ids.settingsscreen.add_widget(s)
+
 
 
 	def build_settings(self,settings):

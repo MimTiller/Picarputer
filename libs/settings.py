@@ -6,6 +6,7 @@ from kivy.properties import NumericProperty, StringProperty, BooleanProperty, Li
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.gridlayout import GridLayout
+from kivy.uix.scrollview import ScrollView
 from kivy.metrics import dp
 from kivy.uix.widget import Widget
 from kivy.uix.slider import Slider
@@ -32,13 +33,10 @@ class SettingDynamicOptions(SettingOptions):
 		mod = importlib.import_module(mod_name)
 		func = getattr(mod,func_name)
 		self.options = func()
-
 		super(SettingDynamicOptions, self)._create_popup(instance)
 
 class SettingSlider(SettingItem):
 	popup = ObjectProperty(None, allownone=True)
-
-
 
 	def on_panel(self, instance, value):
 		if value is None:
@@ -81,11 +79,43 @@ class SettingSlider(SettingItem):
 		content.add_widget(btn2)
 		popup.open()
 
+class SettingScrollview(SettingItem):
+	function_string = StringProperty()
+	popup = ObjectProperty(None, allownone=True)
 
+	def on_panel(self, instance, value):
+		if value is None:
+			return
+		self.bind(on_release=self._create_popup)
+
+	def _set_option(self,option):
+		self.value = option
+		self.popup.dismiss()
+
+	def _create_popup(self, instance):
+		mod_name, func_name= self.function_string.rsplit('.',1)
+		mod = importlib.import_module(mod_name)
+		func = getattr(mod,func_name)
+		self.options = func()
+		print(self.options)
+		# create the popup
+		content = ScrollView(size_hint=(1,None),size=(Window.width,Window.height))
+		grid = GridLayout(cols=1,spacing='5dp')
+		grid.bind(minimum_height=content.setter('height'))
+		for option in self.options:
+			btn = Button(text=option, size_hint_y=None,height=40)
+			grid.add_widget(btn)
+		content.add_widget(grid)
+		popup_width = min(0.95 * Window.width, dp(500))
+		self.popup = popup = Popup(
+			content=content, title=self.title, size_hint=(None, None),
+			size=(popup_width, '400dp'))
+		popup.height = len(self.options) * dp(55) + dp(150)
+		popup.open()
 
 class MySettings(SettingsWithNoMenu):
 	json_settings = json.dumps([
-		{'type': 'dynamic_options',
+		{'type': 'scrollview',
 		'title': "Screen Resolution",
 		'desc': "Set the screen resolution",
 		'section':'Default',
@@ -119,6 +149,7 @@ class MySettings(SettingsWithNoMenu):
 
 	def __init__(self,*args,**kargs):
 		super(MySettings,self).__init__(*args,**kargs)
-		Color=(0,0,0,0)
+		#color=(0,0,0,0)
+		self.register_type('scrollview',SettingScrollview)
 		self.register_type('dynamic_options',SettingDynamicOptions)
 		self.register_type('slider',SettingSlider)

@@ -26,7 +26,8 @@ MainThread:
 	#layout
 	AnchorLayout:
 		anchor_x: 'center'
-		anchor_y: 'bottom'
+		anchor_y: 'center'
+
 
 		#wallpaper, works on every screen minus settings screen
 		WallPaper:
@@ -34,17 +35,17 @@ MainThread:
 			source: self.wallpaper_selection
 			pos: self.pos
 			allow_stretch: True
-			keep_ratio: True
+			keep_ratio: False
 			size_hint_y: None
 			size_hint_x: None
-			width: self.parent.width
-			height: self.parent.width/self.image_ratio
+			height: root.height
+			width: root.width
 
 		#Main Screens
 		ScreenManagement:
 			transition: SlideTransition()
 			id: st
-			size_hint: 1, 0.89
+			size_hint: 1, 0.74
 			MusicScreen:
 				name: 'music'
 				FloatLayout:
@@ -176,7 +177,7 @@ MainThread:
 	        BoxLayout:
 				canvas.before:
 					Color:
-						rgba: .4,.4,.4,0.9
+						rgba: .3,.3,.3,0.85
 					Rectangle:
 						pos: self.pos
 						size: self.size
@@ -186,9 +187,10 @@ MainThread:
 	            size_hint: 1, 0.13
 
 				IconButton:
+					id: musicicon
 					name: '1'
 					orientation: 'vertical'
-					size_hint: 0.25,None
+					size_hint: 0.25,1
 					pos_hint: {'x': 0, 'y':0}
 					on_release:
 						root.slide_screen(self.name,"music")
@@ -196,16 +198,15 @@ MainThread:
 					MDIconButton: #Music button
 						id: music
 						icon: 'music-note'
-						size_hint: None, 0.8
-						pos_hint: {'x': 0.35, 'y':0}
-						user_font_size: "64sp"
+						size_hint: 1, .4
+						user_font_size: self.y*2
 						theme_text_color: "Custom"
 						text_color: app.theme_cls.primary_light
 						on_release:
 							root.slide_screen('1',"music")
 
 					MDLabel:
-						size_hint: 1, 0.15
+						size_hint: 1, 0.2
 						id: musiclabel
 						font_style: 'H6'
 						halign: "center"
@@ -213,9 +214,10 @@ MainThread:
 						color: app.theme_cls.primary_light
 
 				IconButton:
+					id: obdicon
 					name: '2'
 					orientation: 'vertical'
-					size_hint: 0.25,None
+					size_hint: 0.25,1
 					pos_hint: {'x': 0.25, 'y':0}
 					on_release:
 						root.slide_screen(self.name,"obd")
@@ -223,16 +225,15 @@ MainThread:
 					MDIconButton: #OBDII button
 						id: obd
 						icon: 'car-cruise-control'
-						size_hint: None, 0.85
-						pos_hint: {'x': 0.35, 'y':0}
-						user_font_size: "64sp"
+						size_hint: 1, .4
+						user_font_size: self.y*2
 						theme_text_color: "Custom"
 						text_color: app.theme_cls.primary_color
 						on_release:
 							root.slide_screen('2',"obd")
 
 					MDLabel:
-						size_hint: 1, 0.15
+						size_hint: 1, 0.2
 						id: obdlabel
 						font_style: 'H6'
 						halign: "center"
@@ -240,9 +241,10 @@ MainThread:
 						color: app.theme_cls.primary_color
 
 				IconButton:
+					id: perficon
 					name: '3'
 					orientation: 'vertical'
-					size_hint: 0.25,None
+					size_hint: 0.25,1
 					pos_hint: {'x': 0.5, 'y':0}
 					on_release:
 						root.slide_screen(self.name,"perf")
@@ -250,16 +252,15 @@ MainThread:
 					MDIconButton: #PerfScreen
 						id: perf
 						icon: 'tune'
-						size_hint: None, 0.8
-						pos_hint: {'x': 0.35, 'y':0}
-						user_font_size: "64sp"
+						size_hint: 1, .4
+						user_font_size: self.y*2
 						theme_text_color: "Custom"
 						text_color: app.theme_cls.primary_color
 						on_release:
 							root.slide_screen('3',"perf")
 
 					MDLabel:
-						size_hint: 1, 0.15
+						size_hint: 1, 0.2
 						id: perflabel
 						font_style: 'H6'
 						halign: "center"
@@ -267,9 +268,10 @@ MainThread:
 						color: app.theme_cls.primary_color
 
 				IconButton:
+					id: settingsicon
 					name: '4'
 					orientation: 'vertical'
-					size_hint: 0.25,None
+					size_hint: 0.25,1
 					pos_hint: {'x': 0.75, 'y':0}
 					on_release:
 						root.slide_screen(self.name,"settings")
@@ -277,16 +279,15 @@ MainThread:
 					MDIconButton:  #settings button
 						id: settings
 						icon: 'settings'
-						size_hint: None, 0.8
-						pos_hint: {'x': 0.35, 'y':0}
-						user_font_size: "64sp"
+						size_hint: 1, .4
+						user_font_size: self.y*2
 						theme_text_color: "Custom"
 						text_color: app.theme_cls.primary_color
 						on_release:
 							root.slide_screen('4',"settings")
 
 					MDLabel:
-						size_hint: 1, 0.15
+						size_hint: 1, 0.2
 						id: settingslabel
 						font_style: 'H6'
 						halign: "center"
@@ -303,43 +304,33 @@ MainThread:
 					padding: 7,7,0,0
 					BoxLayout:
 						orientation: 'horizontal'
-						Button:
+
+						MDIconButton:
 							id: last_track
+							icon: 'skip-previous'
+							user_font_size: "64sp"
 							size_hint: 0.055, 1
+							theme_text_color: "Custom"
+							text_color: app.theme_cls.primary_color
 							on_press: root.back_button()
-							background_color:(0.9, 0.9, 0.9, 0.0)
-							Image:
-								size: last_track.size
-								source:'data/icons/back.png'
-								x: last_track.x
-								y: last_track.y
-								allow_stretch: True
-								keep_ratio: False
-						Button:
+
+						MDIconButton:
 							id: playpause
+							icon: 'play'
+							user_font_size: "64sp"
 							size_hint: 0.055, 1
-							background_color:(0.9, 0.9, 0.9, 0.0)
-							on_press: root.playpause()
-							Image:
-								id: playpausebutton
-								size: playpause.size
-								source: 'data/icons/play.png'
-								x: playpause.x
-								y: playpause.y
-								allow_stretch: True
-								keep_ratio: False
-						Button:
+							theme_text_color: "Custom"
+							text_color: app.theme_cls.primary_color
+							on_press: root.back_button()
+
+						MDIconButton:
 							id: next
+							icon: 'skip-next'
+							user_font_size: "64sp"
 							size_hint: 0.055, 1
-							on_press: root.next_button()
-							background_color:(0.9, 0.9, 0.9, 0.0)
-							Image:
-								size: next.size
-								source:'data/icons/forward.png'
-								x: next.x
-								y: next.y
-								allow_stretch: True
-								keep_ratio: False
+							theme_text_color: "Custom"
+							text_color: app.theme_cls.primary_color
+							on_press: root.back_button()
 						BoxLayout:
 							orientation: 'vertical'
 							size_hint: 0.045, 1
