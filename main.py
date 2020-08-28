@@ -72,7 +72,7 @@ import re, sys, os, random, threading, time, eyed3, mutagen, glob
 import dataset, usb, psutil, importlib, json, concurrent.futures
 
 from libs import tagger, audio, vlc, btdevices, initialize, settings
-from libs.settings import SettingSlider, SettingDynamicOptions, MySettings
+from libs.settings import SettingSlider, MySettings
 
 from threading import Thread
 from collections import defaultdict
@@ -197,9 +197,9 @@ class MainThread(FloatLayout):
 		msg.text = str(message)
 		ttl = widget.root.ids.notifytitle
 		ttl.text = str(title)
-		anim = Animation(pos_hint={'x':0.75},duration=.3)
+		anim = Animation(pos_hint={'x':0.72},duration=.3)
 		anim.start(notification)
-		Clock.schedule_once(partial(self.hide_notify,self,widget),timeout)
+		Clock.schedule_once(partial(self.hide_notify,self,widget),float(timeout))
 
 
 	def slide_screen(self,instance,screenname):
@@ -240,16 +240,16 @@ class MainThread(FloatLayout):
 			self.player.play()
 
 	def shuffleicon(self):
-		shuffleon = 'data/icons/shuffle_on.png'
-		shuffleoff = 'data/icons/shuffle.png'
 		if self.shuffle == True:
 			self.shuffle = False
-			self.ids.shuffleimage.source=shuffleoff
+			self.ids.shuffle.theme_text_color: "Custom"
+			self.ids.shuffle.text_color: MainApp().theme_cls.primary_light
 			self.notshuffle = 0
 			print ("Shuffle Off")
 		elif self.shuffle == False:
 			self.shuffle = True
-			self.ids.shuffleimage.source=shuffleon
+			self.ids.shuffle.theme_text_color: "Custom"
+			self.ids.shuffle.text_color: MainApp().theme_cls.primary_color
 			print ("Shuffle On")
 		self.num = 0
 		self.dir = 0
@@ -379,8 +379,8 @@ class MainThread(FloatLayout):
 			volume = App.get_running_app().config.get('Default','startupvolume')
 		except:
 			volume = 75
-		self.player.audio_set_volume(int(volume))
-		return int(volume)
+		#self.player.audio_set_volume(float(volume))
+		return int(float(volume))
 
 
 	#take song, look up file in database, extract artist album, and title
@@ -447,44 +447,43 @@ class MainApp(MDApp):
 	def __init(self,**kwargs):
 		self.theme_cls.primary_palette = "Blue"
 		self.theme_cls.theme_style = "Dark"
-
-
+		self.config = ConfigParser()
+		self.config.read('main.ini')
+		self.timeout = NumericProperty()
 	def build(self):
 		self.settings_cls = MySettings
 		self.icon = 'music.png'
 		build = Builder.load_file('carputer.ky')
-		build.add_widget(PlayButtons())
-		build.add_widget(VolumeSlider())
-		build.add_widget(BigScreenInfo())
-		#build.add_widget(Scroller1())
-		#build.add_widget(Scroller2())
+		#build.add_widget(PlayButtons())
+		#build.add_widget(VolumeSlider())
+		#build.add_widget(BigScreenInfo())
 		return build
 
 	def build_config(self,config):
 		config.setdefaults("Default", {
 			"resolutions": initialize.current_res(),
-			"fullscreen": '0',
+			"fullscreen": 0,
 			"wallpaper": "blackbox.jpg",
 			"startupvolume": 75,
-			"bt_list": "Click to connect..."})
-
-
+			"bt_list": "Click to connect...",
+			"notificationtimeout":2})
 		try:
-			config = ConfigParser()
-			config.read('main.ini')
 			#Get config resolution
-			conf_res = config.get('Default', 'resolutions').split('x')
+			conf_res = self.config.get('Default', 'resolutions').split('x')
 			confh = int(conf_res[1])
 			confw = int(conf_res[0])
 			#Set Resolution
 			Window.size = confw,confh
 			#check Fullscreen
-			fs = config.get('Default', 'fullscreen')
+			fs = self.config.get('Default', 'fullscreen')
+			self.timeout = self.config.get('Default','notificationtimeout')
 			if fs == "1":
 				Window.fullscreen = True
 			elif fs == "0":
 				Window.fullscreen = False
+
 		except:
+			self.timeout = 1
 			#get current screen resolution
 			x = initialize.current_res().split('x')
 			height = int(x[1])
@@ -498,20 +497,25 @@ class MainApp(MDApp):
 		self.root.ids.settingsscreen.add_widget(s)
 
 
-
 	def build_settings(self,settings):
-		#pull from settings.py
+		with settings.canvas.before:
+			settings.canvas.before.clear()
+		with settings.canvas.before:
+			Color(.1,.1,.1,0.65,mode='rgba')
+			Rectangle(pos=(0,0), size=(10000,10000))
 		data = settings.json_settings
 		settings.add_json_panel("Default", self.config, data=data)
 
 
 	def on_config_change(self,config,section,key,value):
 		title = "Settings"
+		self.timeout = config.get('Default','notificationtimeout')
 		if key == "startupvolume":
-			self.startupvolume = int(value)
+			self.startupvolume = int(float(value))
 			message = "Volume changed to {}".format(value)
-			MainThread.snackbar(MainThread,self,title=title,message=message,timeout=2)
-			MainThread.notify(MainThread,self,title=title,message=message,timeout=2)
+			MainThread.snackbar(MainThread,self,title=title,message=message,timeout=self.timeout)
+			MainThread.notify(MainThread,self,title=title,message=message,timeout=self.timeout)
+
 		if key == "bt_list":
 			message = "Connected to {}".format(value)
 
@@ -520,20 +524,28 @@ class MainApp(MDApp):
 			height = int(x[1])
 			width = int(x[0])
 			Window.size = width,height
+
 		if key == "fullscreen":
 			print (value)
 			if value == '1':
 				Window.fullscreen = True
 			else:
 				Window.fullscreen = False
+
 		if key == "wallpaper":
 			wp = 'data/wallpapers/' + value
 			wpfile = os.getcwd() + "\\data\\wallpapers\\{}".format(value)
 			if os.path.isfile(wpfile):
 				self.root.ids.wallpp.source = wp
-
 			else:
 				print (wp + " is not a valid background image")
+
+		if key == "notificationtimeout":
+			title = "Notify"
+			message = "Changed Notify timeout to {} Seconds".format(value)
+			self.timeout = value
+			MainThread.notify(MainThread,self,title=title,message=message,timeout=self.timeout)
+
 
 if __name__ == "__main__":
 	MainApp().run()

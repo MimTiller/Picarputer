@@ -2,6 +2,15 @@
 #:import MeshLinePlot kivy.garden.graph.MeshLinePlot
 #:import isfile os.path.isfile
 
+#for custom scrollview setting
+<SettingScrollview>
+	Label:
+		text: root.value or ''
+#for custom slider setting
+<SettingSlider>
+	Label:
+		text: str(root.value) or ''
+
 <Separator@Widget>:
 	canvas:
 		Color:
@@ -151,11 +160,11 @@ MainThread:
 					RoundedRectangle:
 						pos: self.pos
 						size: self.size
-						radius: [10,]
+						radius: [7,]
 				id: notify
 				orientation: 'vertical'
-				pos_hint: {'x':1,'y':0.12}
-				size_hint: .25, .07
+				pos_hint: {'x':1,'y':0.16}
+				size_hint: .25, .09
 
 				MDLabel:
 					color: 1,1,1,1
@@ -336,18 +345,13 @@ MainThread:
 							size_hint: 0.045, 1
 							Button:
 								background_color:(0.9, 0.9, 0.9, 0.0)
-							Button:
+							MDIconButton:
 								id: shuffle
+								icon: 'shuffle'
+								theme_text_color: "Custom"
+								text_color: app.theme_cls.primary_color
 								on_press: root.shuffleicon()
-								background_color:(0.9, 0.9, 0.9, 0.0)
-								Image:
-									id: shuffleimage
-									size: shuffle.size
-									source:'data/icons/shuffle_on.png'
-									x: shuffle.x
-									y: shuffle.y
-									allow_stretch: True
-									keep_ratio: True
+
 
 						BoxLayout:
 							orientation: 'horizontal'
@@ -386,7 +390,7 @@ MainThread:
 			hint_bg_color: app.theme_cls.accent_color
 			hint_text_color: app.theme_cls.primary_color
 			hint_radius: 2
-			value: int(root.volstartup())
+			value: float(root.volstartup())
 			orientation: 'vertical'
 			id: volumeslider
 			on_value: root.volslider(self.value)
