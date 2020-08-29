@@ -1,3 +1,0 @@
-#!/bin/bash
-python-kivy vlc python-pip libopencv-dev python-opencv
-sudo pip install obd mutagen eyed3 futures requests kivy-garden dataset pyusb scandir
