@@ -1,5 +1,5 @@
 This is the repo for Picarputer, a python program for the Raspberry Pi
-![Picarputer Interface](https://github.com/MimTiller/Picarputer/blob/master/picarputer.png)
+![Picarputer Interface](https://raw.githubusercontent.com/MimTiller/Picarputer/master/picarputer.PNG)
 
 # INSTALLATION:
 change directory to the picarputer folder
