@@ -10,3 +10,4 @@ eyed3
 futures
 kivy
 kivy-garden
+kivy_garden.graph
