@@ -1,5 +1,5 @@
 #:import SlideTransition kivy.uix.screenmanager.SlideTransition
-#:import MeshLinePlot kivy.garden.graph.MeshLinePlot
+#:import MeshLinePlot kivy_garden.graph.MeshLinePlot
 #:import isfile os.path.isfile
 
 #for custom scrollview setting

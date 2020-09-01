@@ -6,8 +6,7 @@ from kivy.core.window import Window
 from kivy.config import Config, ConfigParser
 from kivy.clock import Clock
 
-from kivy.garden.graph import MeshLinePlot, SmoothLinePlot
-from kivy.garden.notification import Notification
+from kivy_garden.graph import MeshLinePlot, SmoothLinePlot
 from kivy.storage.jsonstore import JsonStore
 from kivy.uix.settings import SettingsWithNoMenu, SettingOptions, SettingsWithSidebar, SettingItem
 from kivy.metrics import dp
@@ -48,7 +47,6 @@ from kivymd.theming import ThemableBehavior
 from kivy.uix.behaviors import ButtonBehavior
 from kivymd.theming import ThemeManager
 #misc
-
 from kivy.properties import (
     BooleanProperty,
     BoundedNumericProperty,
