@@ -18,6 +18,7 @@ from kivy.graphics import Color
 from kivy.animation import Animation
 from kivy.config import Config, ConfigParser
 import importlib, os, json
+from kivymd.uix.picker import MDThemePicker
 
 
 
@@ -25,10 +26,30 @@ class SettingSpacer(Widget):
     # Internal class, not documented.
     pass
 
+class SettingColorPicker(SettingItem):
+	value = StringProperty()
+	popup = ObjectProperty(None, allownone=True)
+
+	def on_panel(self, instance, value):
+		if value is None:
+			return
+		self.bind(on_release=self._create_popup)
+
+	def _set_option(self,option):
+		print (option)
+		self.value = int(option)
+		self.popup.dismiss()
+
+	def _create_popup(self, instance):
+		content = MDThemePicker()
+		popup_width = min(0.95 * Window.width, dp(500))
+		popup = Popup(
+		    content=content, title=self.title, size_hint=(None, None),
+		    size=(popup_width, '400dp'))
+		popup.open()
 
 
 class SettingSlider(SettingItem):
-	from kivy.lang import Builder
 	value = ObjectProperty('int')
 	popup = ObjectProperty(None, allownone=True)
 	slidermax = NumericProperty()
@@ -50,7 +71,6 @@ class SettingSlider(SettingItem):
 			label.text=str(int(value))
 			self.value = int(value)
 
-		self.options = "10"
 		content = BoxLayout(orientation='vertical', spacing='5dp')
 		popup_width = min(0.95 * Window.width, dp(500))
 
@@ -165,7 +185,14 @@ class MySettings(SettingsWithNoMenu):
 		'desc': 'Amount of time it takes for notification to dissapear',
 		'section': 'Default',
 		'key': 'notificationtimeout',
-		'slidermax':'10'}
+		'slidermax':'10'},
+		{'type': 'title',
+		'title': 'Theme'},
+		{'type': 'colorpicker',
+		'title': 'Theme Color',
+		'desc': 'Pick a color, any color!',
+		'section': 'Default',
+		'key': 'themecolor'},
 		])
 
 	def __init__(self,*args,**kargs):
@@ -173,3 +200,4 @@ class MySettings(SettingsWithNoMenu):
 		#color=(0,0,0,0)
 		self.register_type('scrollview',SettingScrollview)
 		self.register_type('slider',SettingSlider)
+		self.register_type('colorpicker',SettingColorPicker)

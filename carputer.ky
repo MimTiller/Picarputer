@@ -10,6 +10,10 @@
 <SettingSlider>
 	Label:
 		text: str(root.value) or ''
+#for custom color picker setting
+<SettingColorPicker>
+	Label:
+		text: str(root.value) or ''
 
 <Separator@Widget>:
 	canvas:
@@ -355,12 +359,13 @@ MainThread:
 
 						BoxLayout:
 							orientation: 'horizontal'
-							Button:
+							MDLabel:
 								id: songpos
 								text: "0:00"
 								size_hint: 0.06,1
-								background_color:(0.9, 0.9, 0.9, 0.0)
-								font_size: songpos.height/2
+								theme_text_color: 'Custom'
+								text_color: app.theme_cls.primary_color
+								font_size: songpos.height/2.5
 
 							BoxLayout:
 								orientation: 'vertical'
@@ -373,12 +378,13 @@ MainThread:
 									size_hint: 1, 0.35
 									cursor_size: 20, 20
 
-							Button:
+							MDLabel:
 								id: songlength
 								size_hint: 0.06,1
-								background_color:(0.9, 0.9, 0.9, 0.0)
+								theme_text_color: 'Custom'
+								text_color: app.theme_cls.primary_color
 								text: "--:--"
-								font_size: songlength.height/2
+								font_size: songlength.height/2.5
 
 	VolumeSlider:
 		id: volumecontrol

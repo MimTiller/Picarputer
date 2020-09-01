@@ -466,7 +466,8 @@ class MainApp(MDApp):
 			"wallpaper": "blackbox.jpg",
 			"startupvolume": 75,
 			"bt_list": "Click to connect...",
-			"notificationtimeout":2})
+			"notificationtimeout":2,
+			"themecolor": "blue"})
 		try:
 			#Get config resolution
 			conf_res = self.config.get('Default', 'resolutions').split('x')
