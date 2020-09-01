@@ -1,5 +1,5 @@
 *.pyc
-config.ini
+main.ini
 libs/__pycache__
 __pycache__
 data/artwork
