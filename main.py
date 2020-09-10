@@ -127,7 +127,6 @@ class Notify(FloatLayout):
 
 
 
-
 class WallPaper(Image):
 	wallpaper_selection = StringProperty()
 	config = ConfigParser()
@@ -178,9 +177,9 @@ class MainThread(FloatLayout):
 
 	def menu_font_update(self):
 		for button in ['musicicon','obdicon','perficon','settingsicon']:
-			print (button, self.ids[button].size)
 			icon = button[:-4]
 			self.ids[icon].user_font_size = self.ids[button].size[1]
+
 	def snackbar(self,widget,title,message,timeout):
 		toast(message)
 
@@ -204,8 +203,8 @@ class MainThread(FloatLayout):
 		for button in ['music','obd','perf','settings']:
 			self.ids[button].text_color = MainApp().theme_cls.primary_color
 			self.ids[str(button + "label")].color = MainApp().theme_cls.primary_color
-		self.ids[screenname].text_color = MainApp().theme_cls.primary_light
-		self.ids[str(screenname + "label")].color = MainApp().theme_cls.primary_light
+		self.ids[screenname].text_color = MainApp().theme_cls.accent_color
+		self.ids[str(screenname + "label")].color = MainApp().theme_cls.accent_color
 		if int(instance) > int(self.currentscreen):
 			self.ids.st.transition = SlideTransition(direction="left")
 			self.currentscreen = instance
@@ -436,9 +435,9 @@ class MainThread(FloatLayout):
 	def start_thread(self,dt):
 		global graph
 		graph = defaultdict(list)
-		graphdaemon = Thread(target = self.perf_graph)
-		graphdaemon.daemon = True
-		graphdaemon.start()
+		#graphdaemon = Thread(target = self.perf_graph)
+		#graphdaemon.daemon = True
+		#graphdaemon.start()
 #_______________________________#MAIN APP#______________________________
 
 class MainApp(MDApp):
@@ -448,6 +447,7 @@ class MainApp(MDApp):
 		self.config = ConfigParser()
 		self.config.read('main.ini')
 		self.timeout = NumericProperty()
+
 	def build(self):
 		self.settings_cls = MySettings
 		self.icon = 'music.png'
@@ -465,7 +465,8 @@ class MainApp(MDApp):
 			"startupvolume": 75,
 			"bt_list": "Click to connect...",
 			"notificationtimeout":2,
-			"themecolor": "blue"})
+			"themecolor": "Blue",
+			"accentcolor": "LightBlue"})
 		try:
 			#Get config resolution
 			conf_res = self.config.get('Default', 'resolutions').split('x')
@@ -544,6 +545,16 @@ class MainApp(MDApp):
 			message = "Changed Notify timeout to {} Seconds".format(value)
 			self.timeout = value
 			MainThread.notify(MainThread,self,title=title,message=message,timeout=self.timeout)
+
+		if key == "themecolor":
+			message = "Changed main theme color to {}".format(value)
+			MainThread.notify(MainThread,self,title=title,message=message,timeout=self.timeout)
+			self.theme_cls.primary_palette = value
+		if key == "accentcolor":
+			message = "Changed accent color to {}".format(value)
+			MainThread.notify(MainThread,self,title=title,message=message,timeout=self.timeout)
+			self.theme_cls.accent_palette = value
+			MT = App.get_running_app()
 
 
 if __name__ == "__main__":

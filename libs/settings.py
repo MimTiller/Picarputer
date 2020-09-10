@@ -2,7 +2,7 @@ from kivy.core.window import Window
 from kivy.uix.popup import Popup
 from kivy.uix.spinner import Spinner
 from kivy.uix.settings import SettingsWithNoMenu, SettingOptions, SettingItem, SettingsWithSidebar
-from kivy.properties import NumericProperty, StringProperty, BooleanProperty, ListProperty, ObjectProperty
+from kivy.properties import NumericProperty, StringProperty, BooleanProperty, ListProperty, ObjectProperty,OptionProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.gridlayout import GridLayout
@@ -18,8 +18,13 @@ from kivy.graphics import Color
 from kivy.animation import Animation
 from kivy.config import Config, ConfigParser
 import importlib, os, json
-from kivymd.uix.picker import MDThemePicker
+from kivymd.color_definitions import colors, palette
+from kivy.utils import get_color_from_hex
+from kivy.app import App
 
+class ColorSelector(Button):
+    color_digits = ListProperty([1,1,1,1])
+    color_name = StringProperty('Red')
 
 
 class SettingSpacer(Widget):
@@ -27,26 +32,39 @@ class SettingSpacer(Widget):
     pass
 
 class SettingColorPicker(SettingItem):
-	value = StringProperty()
-	popup = ObjectProperty(None, allownone=True)
+    value = StringProperty()
+    popup = ObjectProperty(None, allownone=True)
+    colors = ['Red','Pink','Purple','DeepPurple',
+            'Indigo','Blue','LightBlue','Cyan',
+            'Teal','Green','LightGreen','Lime',
+            'Yellow','Amber','Orange','DeepOrange',
+            'Brown','Gray','BlueGray']
 
-	def on_panel(self, instance, value):
-		if value is None:
-			return
-		self.bind(on_release=self._create_popup)
+    def rgb_hex(self, col):
+        return get_color_from_hex(colors[col][App.get_running_app().theme_cls.accent_hue])
 
-	def _set_option(self,option):
-		print (option)
-		self.value = int(option)
-		self.popup.dismiss()
+    def on_panel(self, instance, value):
+        if value is None:
+            return
+        self.bind(on_release=self._create_popup)
 
-	def _create_popup(self, instance):
-		content = MDThemePicker()
-		popup_width = min(0.95 * Window.width, dp(500))
-		popup = Popup(
-		    content=content, title=self.title, size_hint=(None, None),
-		    size=(popup_width, '400dp'))
-		popup.open()
+    def _set_option(self,option):
+        self.value = str(option.color_name)
+        self.popup.dismiss()
+
+    def _create_popup(self, instance):
+        content=GridLayout(cols=4,rows=5)
+        for color in self.colors:
+            color_hex = self.rgb_hex(color)
+            btn = ColorSelector(background_color = (0,0,0,0),color_digits=color_hex,color_name=color)
+            btn.bind(on_release=self._set_option)
+            content.add_widget(btn)
+        popup_width = min(0.95 * Window.width, dp(300))
+        popup_height = min(0.95 * Window.height, dp(400))
+        self.popup = Popup(
+        content=content, title=self.title, size_hint=(None, None),
+        size=(popup_width, popup_height))
+        self.popup.open()
 
 
 class SettingSlider(SettingItem):
@@ -59,13 +77,11 @@ class SettingSlider(SettingItem):
 		self.bind(on_release=self._create_popup)
 
 	def _set_option(self,option):
-		print (option)
 		self.value = int(option)
 		self.popup.dismiss()
 
 	def _create_popup(self, instance):
 		# create the popup
-		print (self.value)
 		label = Label(text=str(int(self.value)),id='labelvalue')
 		def on_value(self,value):
 			label.text=str(int(value))
@@ -126,7 +142,6 @@ class SettingScrollview(SettingItem):
 		for option in self.options:
 			btn = Button(text=option, size_hint_y=None,height=40)
 			btn.bind(on_press=self._set_option)
-			print(btn.text)
 			grid.add_widget(btn)
 
 		okbutton = Button(text="Cancel",size_hint_y=0.1)
@@ -193,6 +208,11 @@ class MySettings(SettingsWithNoMenu):
 		'desc': 'Pick a color, any color!',
 		'section': 'Default',
 		'key': 'themecolor'},
+		{'type':'colorpicker',
+		'title': 'Accent Color',
+		'desc':'Accent color for theme',
+		'section':'Default',
+		'key':'accentcolor'}
 		])
 
 	def __init__(self,*args,**kargs):
