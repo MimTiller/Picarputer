@@ -27,7 +27,7 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.label import Label
 from kivy.uix.spinner import Spinner
 from kivy.uix.popup import Popup
-
+from kivy.uix.camera import Camera
 #kivyMD imports
 from kivymd.app import MDApp
 from kivymd.uix.snackbar import Snackbar
@@ -93,11 +93,10 @@ global graph
 #global wallpaper
 graph = []
 
+#--------------------------------#KIVY#------------------------------------
+#pass clickable button behavior
 class IconButton(ButtonBehavior,BoxLayout):
 	pass
-
-
-#-----------------------------#KIVY#------------------------------------
 class ScreenManagement(ScreenManager):
     pass
 class Menu(AnchorLayout):
@@ -141,6 +140,9 @@ class WallPaper(Image):
 class NotificationSnackbar(Snackbar):
 	icon = StringProperty()
 
+class BackupCam(Camera):
+	play = True
+	resolution=Window.size
 #-----------------------MAIN-FUNCTIONS---------------------------------#
 class MainThread(FloatLayout):
 	instance = vlc.Instance()
@@ -198,7 +200,6 @@ class MainThread(FloatLayout):
 		anim.start(notification)
 		Clock.schedule_once(partial(self.hide_notify,self,widget),float(timeout))
 
-
 	def slide_screen(self,instance,screenname):
 		for button in ['music','obd','perf','settings']:
 			self.ids[button].text_color = MainApp().theme_cls.primary_color
@@ -214,7 +215,6 @@ class MainThread(FloatLayout):
 		else:
 			pass
 		self.ids.st.current = screenname
-
 
 	def playpause(self):
 		state = str(self.player.get_state())
@@ -250,7 +250,6 @@ class MainThread(FloatLayout):
 			print ("Shuffle On")
 		self.num = 0
 		self.dir = 0
-
 
 	def next_file(self,direction):
 		self.num += direction
@@ -288,7 +287,6 @@ class MainThread(FloatLayout):
 		self.ids.playpausebutton.source = pauseicon
 		print (self.next_Song)
 
-
 	def next_button(self):
 		self.next_file(1)
 
@@ -311,7 +309,6 @@ class MainThread(FloatLayout):
 			self.album_art.source=art
 		except:
 			self.album_art.source='data/icons/unknown.png'
-
 	#called every time specified in the configuration
 	def refresh(self, dt):
 		self.perf_counter()
@@ -341,8 +338,6 @@ class MainThread(FloatLayout):
 		except:
 			pass
 
-
-
 	def play_title(self, search_artist, search_album, search_title):	#send artist album and title and this will play the file and refresh the screen
 		self.artist = search_artist
 		self.album = search_album
@@ -359,14 +354,12 @@ class MainThread(FloatLayout):
 			else:
 				pass
 
-
 	def slider_max(self, song):
 		for x in table.find(location=song):
 			length = x['length']
 		#returns the max for the song length slider (max value depends on how quickly it gets updated)
 		self.slider.max = length / screenupdatetime
 		print (self.slider.max)
-
 
 	def volslider(self, value):
 		self.player.audio_set_volume(int(value))
@@ -466,7 +459,8 @@ class MainApp(MDApp):
 			"bt_list": "Click to connect...",
 			"notificationtimeout":2,
 			"themecolor": "Blue",
-			"accentcolor": "LightBlue"})
+			"accentcolor": "LightBlue",
+			"audio_output":"None"})
 		try:
 			#Get config resolution
 			conf_res = self.config.get('Default', 'resolutions').split('x')
@@ -481,6 +475,8 @@ class MainApp(MDApp):
 				Window.fullscreen = True
 			elif fs == "0":
 				Window.fullscreen = False
+			Window.top=30
+			Window.left=0
 
 		except:
 			self.timeout = 1
@@ -488,6 +484,7 @@ class MainApp(MDApp):
 			x = initialize.current_res().split('x')
 			height = int(x[1])
 			width = int(x[0])
+
 			Window.size = width,height
 			Window.fullscreen=False
 

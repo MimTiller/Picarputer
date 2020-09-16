@@ -1,4 +1,4 @@
-import pygame,os
+import pygame,os,sounddevice
 
 def current_res():
 	pygame.init()
@@ -21,3 +21,11 @@ def get_wallpapers():
 	#print (files[0])
 	#self.ids.wpspinner.bind(text = self.on_spinner_select)
 	return wallpaperlist
+
+def get_audio_out():
+	sd = sounddevice
+	device_list = []
+	for device in sd.query_devices():
+		if device['max_output_channels'] > 0:
+			device_list.append(device['name'])
+	return device_list

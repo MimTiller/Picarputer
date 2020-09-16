@@ -22,55 +22,63 @@ from kivymd.color_definitions import colors, palette
 from kivy.utils import get_color_from_hex
 from kivy.app import App
 
-class ColorSelector(Button):
-    color_digits = ListProperty([1,1,1,1])
-    color_name = StringProperty('Red')
 
+
+#Custom button for making colored circles
+class ColorSelector(Button):
+	color_digits = ListProperty([1,1,1,1])
+	color_name = StringProperty('Red')
+	def test():
+		print("test")
 
 class SettingSpacer(Widget):
     # Internal class, not documented.
     pass
 
+
+#color picker settings class
 class SettingColorPicker(SettingItem):
-    value = StringProperty()
-    popup = ObjectProperty(None, allownone=True)
-    colors = ['Red','Pink','Purple','DeepPurple',
-            'Indigo','Blue','LightBlue','Cyan',
-            'Teal','Green','LightGreen','Lime',
-            'Yellow','Amber','Orange','DeepOrange',
-            'Brown','Gray','BlueGray']
+	value = StringProperty()
+	popup = ObjectProperty(None, allownone=True)
+	colors = ['Red','Pink','Purple','DeepPurple',
+	        'Indigo','Blue','LightBlue','Cyan',
+	        'Teal','Green','LightGreen','Lime',
+	        'Yellow','Amber','Orange','DeepOrange',
+	        'Brown','Gray','BlueGray']
 
-    def rgb_hex(self, col):
-        return get_color_from_hex(colors[col][App.get_running_app().theme_cls.accent_hue])
+	def rgb_hex(self, col):
+		return get_color_from_hex(colors[col][App.get_running_app().theme_cls.accent_hue])
 
-    def on_panel(self, instance, value):
-        if value is None:
-            return
-        self.bind(on_release=self._create_popup)
+	def on_panel(self, instance, value):
+		if value is None:
+			return
+		self.bind(on_release=self._create_popup)
 
-    def _set_option(self,option):
-        self.value = str(option.color_name)
-        self.popup.dismiss()
+	def _set_option(self,option):
+		print (option.color_name)
+		self.value = str(option.color_name)
+		self.popup.dismiss()
 
-    def _create_popup(self, instance):
-        content=GridLayout(cols=4,rows=5)
-        for color in self.colors:
-            color_hex = self.rgb_hex(color)
-            btn = ColorSelector(background_color = (0,0,0,0),color_digits=color_hex,color_name=color)
-            btn.bind(on_release=self._set_option)
-            content.add_widget(btn)
-        popup_width = min(0.95 * Window.width, dp(300))
-        popup_height = min(0.95 * Window.height, dp(400))
-        self.popup = Popup(
-        content=content, title=self.title, size_hint=(None, None),
-        size=(popup_width, popup_height))
-        self.popup.open()
+	def _create_popup(self, instance):
+		content=GridLayout(cols=4,rows=5)
+		for color in self.colors:
+			color_hex = self.rgb_hex(color)
+			btn = ColorSelector(background_color=(0,0,0,0),color_digits=color_hex,color_name=color)
+			btn.bind(on_release=self._set_option)
+			content.add_widget(btn)
+		popup_width = min(0.95 * Window.width, dp(300))
+		popup_height = min(0.95 * Window.height, dp(400))
+		self.popup = Popup(
+		content=content, title=self.title, size_hint=(None, None),
+		size=(popup_width, popup_height))
+		self.popup.open()
 
-
+#custom slider settings item
 class SettingSlider(SettingItem):
 	value = ObjectProperty('int')
 	popup = ObjectProperty(None, allownone=True)
 	slidermax = NumericProperty()
+
 	def on_panel(self, instance, value):
 		if value is None:
 			return
@@ -86,25 +94,20 @@ class SettingSlider(SettingItem):
 		def on_value(self,value):
 			label.text=str(int(value))
 			self.value = int(value)
-
 		content = BoxLayout(orientation='vertical', spacing='5dp')
 		popup_width = min(0.95 * Window.width, dp(500))
-
 		btn2 = Button(text='Ok',size_hint_y=None, height=dp(50))
 		btn2.bind(on_release=lambda x:self._set_option(int(float(label.text))))
 		self.popup = popup = Popup(
 		    content=content, title=self.title, size_hint=(None, None),
 		    size=(popup_width, '400dp'))
 		popup.height = len(self.options) * dp(55) + dp(150)
-
 		content.add_widget(Widget(size_hint_y=None, height=1))
 		uid = str(self.uid)
 		slider = Slider(min=0,max=int(float(self.slidermax)),orientation='horizontal',step=1,value=self.value)
 		slider.bind(value = on_value)
-
 		content.add_widget(slider)
 		content.add_widget(label)
-
 		content.add_widget(SettingSpacer())
 		btn = Button(text='Cancel', size_hint_y=None, height=dp(50))
 		btn.bind(on_release=popup.dismiss)
@@ -112,11 +115,12 @@ class SettingSlider(SettingItem):
 		content.add_widget(btn2)
 		popup.open()
 
+
+
 class SettingScrollview(SettingItem):
 	function_string = StringProperty()
 	popup = ObjectProperty(None, allownone=True)
 	value = StringProperty()
-
 
 	def on_panel(self, instance, value):
 		if value is None:
@@ -128,29 +132,23 @@ class SettingScrollview(SettingItem):
 		self.value = button.text
 		self.popup.dismiss()
 
-
 	def _create_popup(self, instance):
 		mod_name, func_name= self.function_string.rsplit('.',1)
 		mod = importlib.import_module(mod_name)
 		func = getattr(mod,func_name)
 		self.options = func()
-		# create the popup
 		content = BoxLayout(orientation='vertical')
 		grid = GridLayout(cols=1,spacing='2dp',size_hint_y=None)
 		scroll = ScrollView()
-
 		for option in self.options:
 			btn = Button(text=option, size_hint_y=None,height=40)
 			btn.bind(on_press=self._set_option)
 			grid.add_widget(btn)
-
 		okbutton = Button(text="Cancel",size_hint_y=0.1)
-
 		grid.height = len(self.options) * 40
 		scroll.add_widget(grid)
 		content.add_widget(scroll)
 		content.add_widget(okbutton)
-
 		popup_width = min(0.95 * Window.width, dp(500))
 		self.popup = popup = Popup(
 			content=content, title=self.title, size_hint=(None, None),
@@ -187,6 +185,12 @@ class MySettings(SettingsWithNoMenu):
 		'key': 'startupvolume',
 		'section': 'Default',
 		'slidermax':'100'},
+		{'type':'scrollview',
+		'title':'Audio Output',
+		'desc':'Select a default audio output',
+		'key':'audio_output',
+		'section':'Default',
+		'function_string': 'libs.initialize.get_audio_out'},
 		{'type': 'scrollview',
 		'title': 'Bluetooth Devices',
 		'desc': 'List and connect to compatible Bluetooth devices',

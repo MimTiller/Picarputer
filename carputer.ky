@@ -12,8 +12,7 @@
         Ellipse:
             size: self.size[0]-20,self.size[1]-20
             pos: self.x + 10, self.y + 10
-	on_release:
-		app.slide_screen('4',"settings")
+	id: root.color_name
 
 
 #for custom scrollview setting
@@ -113,20 +112,10 @@ MainThread:
 
 			OBDIIScreen:
 				name: 'obd'
-				BoxLayout:
-					Button:
-						id: start
-						text: "start"
-					Button:
-						id: latitude
-					Button:
-						id: longitude
-					Button:
-						id: time
-					Button:
-						id: speed
-					Button:
-						id: satellites
+				BackupCam:
+					id:camera
+
+
 			PerfScreen:
 				name: 'perf'
 				BoxLayout:
