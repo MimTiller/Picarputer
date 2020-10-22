@@ -1,4 +1,4 @@
-This is the repo for Picarputer, a python Car UI for the Raspberry Pi
+This is the repo for Picarputer, a python Car Display/UI for the Raspberry Pi
 
 ![Picarputer Interface](https://raw.githubusercontent.com/MimTiller/Picarputer/master/picarputer.PNG)
 
