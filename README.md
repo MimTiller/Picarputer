@@ -8,9 +8,16 @@ x86 PC
 Raspberry Pi or other ARM based processor
 
 ## Installation:
-clone the github repo
-install all pip requirements with 'python3 -m pip install -r requirements.txt'
-in a command terminal, run 'python3 main.py'
+install [Kivy](https://kivy.org/doc/stable/gettingstarted/installation.html), the graphical interface used for this project
+
+clone the github repo 
+`git clone https://github.com/mimtiller/picarputer'
+
+install all pip requirements
+'python3 -m pip install -r requirements.txt'
+
+run it!
+'python3 main.py'
 
 ## Usage:
 to use the application, simply run
