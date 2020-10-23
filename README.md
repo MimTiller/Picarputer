@@ -6,6 +6,9 @@ This is the repo for Picarputer, a python Car Display/UI for the Raspberry Pi
 ## Requirements:
 x86 PC 
 Raspberry Pi or other ARM based processor
+Python 3.5+ 
+Python3-pip
+
 
 ## Installation:
 install [Kivy](https://kivy.org/doc/stable/gettingstarted/installation.html), the graphical interface used for this project
