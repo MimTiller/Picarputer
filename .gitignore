@@ -3,3 +3,4 @@ main.ini
 libs/__pycache__
 __pycache__
 data/artwork
+.cache-subcake

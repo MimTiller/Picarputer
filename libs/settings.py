@@ -22,19 +22,15 @@ from kivymd.color_definitions import colors, palette
 from kivy.utils import get_color_from_hex
 from kivy.app import App
 
-
-
 #Custom button for making colored circles
 class ColorSelector(Button):
 	color_digits = ListProperty([1,1,1,1])
 	color_name = StringProperty('Red')
-	def test():
-		print("test")
+
 
 class SettingSpacer(Widget):
     # Internal class, not documented.
     pass
-
 
 #color picker settings class
 class SettingColorPicker(SettingItem):
@@ -90,7 +86,7 @@ class SettingSlider(SettingItem):
 
 	def _create_popup(self, instance):
 		# create the popup
-		label = Label(text=str(int(self.value)),id='labelvalue')
+		label = Label(text=str(int(self.value)))
 		def on_value(self,value):
 			label.text=str(int(value))
 			self.value = int(value)
@@ -101,7 +97,7 @@ class SettingSlider(SettingItem):
 		self.popup = popup = Popup(
 		    content=content, title=self.title, size_hint=(None, None),
 		    size=(popup_width, '400dp'))
-		popup.height = len(self.options) * dp(55) + dp(150)
+		popup.height = 5 * dp(55) + dp(150)
 		content.add_widget(Widget(size_hint_y=None, height=1))
 		uid = str(self.uid)
 		slider = Slider(min=0,max=int(float(self.slidermax)),orientation='horizontal',step=1,value=self.value)
@@ -114,8 +110,6 @@ class SettingSlider(SettingItem):
 		content.add_widget(btn)
 		content.add_widget(btn2)
 		popup.open()
-
-
 
 class SettingScrollview(SettingItem):
 	function_string = StringProperty()
@@ -216,7 +210,13 @@ class MySettings(SettingsWithNoMenu):
 		'title': 'Accent Color',
 		'desc':'Accent color for theme',
 		'section':'Default',
-		'key':'accentcolor'}
+		'key':'accentcolor'},
+		{'type':'scrollview',
+		'title': 'Source',
+		'desc': 'Audio source selector',
+		'section':'Default',
+		'key':'audio_source',
+		'function_string': 'libs.initialize.sources'}
 		])
 
 	def __init__(self,*args,**kargs):

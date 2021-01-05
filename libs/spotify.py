@@ -5,86 +5,112 @@ import spotipy
 import webbrowser
 import spotipy.util as util
 from json.decoder import JSONDecodeError
+import time
 
+
+
+global sp
 SPOTIPY_CLIENT_ID="c04a53506ea54cc3b46cb7fdf0deffde"
 SPOTIPY_CLIENT_SECRET= "404d47507d8c4c899a1fee325dd17a61"
 scope = 'user-read-private user-read-playback-state user-modify-playback-state'
 username='subcake'
-cache_file = os.getcwd()+"\\.cache-{}".format(username)
-print (cache_file)
-try:
-    token = util.prompt_for_user_token(username, scope,client_id=SPOTIPY_CLIENT_ID,client_secret=SPOTIPY_CLIENT_SECRET,redirect_uri="https://google.com",cache_path=cache_file)
-except (AttributeError, JSONDecodeError):
-    os.remove(f".cache-{username}")
-    token = util.prompt_for_user_token(username, scope)
 
-spotifyObject = spotipy.Spotify(auth=token)
-devices = spotifyObject.devices()
-print(json.dumps(devices, sort_keys=True, indent=4))
+def session_cache():
+	cache_file = os.getcwd()+"\\.cache-{}".format(username)
+	print(cache_file)
+	return(cache_file)
+
+
+auth = spotipy.oauth2.SpotifyOAuth(client_id=SPOTIPY_CLIENT_ID,client_secret=SPOTIPY_CLIENT_SECRET,redirect_uri="https://google.com",cache_path=session_cache())
+try:
+    #token = util.prompt_for_user_token(username, scope,client_id=SPOTIPY_CLIENT_ID,client_secret=SPOTIPY_CLIENT_SECRET,redirect_uri="https://google.com",cache_path=session_cache())
+	pass
+except (AttributeError, JSONDecodeError) as e:
+	print(e)
+	os.remove(f".cache-{username}")
+	token = util.prompt_for_user_token(username, scope)
+
+print("(spotify.py): Logging in...")
+sp = spotipy.Spotify(auth_manager=auth)
+user = sp.me()['id']
+print("(spotify.py) logged in as {}".format(user))
+devices = sp.devices()
+#print(json.dumps(devices, sort_keys=True, indent=4))
 deviceID = devices['devices'][0]['id']
 
-# Get track information
-track = spotifyObject.current_user_playing_track()
-print(json.dumps(track, sort_keys=True, indent=4))
-print()
-artist = track['item']['artists'][0]['name']
-track = track['item']['name']
 
-if artist !="":
-    print("Currently playing " + artist + " - " + track)
+device_list = []
+for x in devices['devices']:
+	device_list.append(x['name'])
+print ("(spotify.py) Usable Devices: {}".format(device_list))
 
-# User information
-user = spotifyObject.current_user()
-displayName = user['display_name']
-follower = user['followers']['total']
 
-while True:
+def reauth():
+	sp = spotipy.Spotify(auth_manager=auth)
+	print('(spotify.py) finished re-authenticating',sp)
+	return(sp)
 
-	print()
-	print(">>> Welcome to Spotify " + displayName + " :)")
-	print(">>> You have " + str(follower) + " followers.")
-	print()
-	print("0 - Search for an artist")
-	print("1 - exit")
-	print()
-	choice = input("Enter your choice: ")
+def get_playing():
+	song = {}
+	try:
+		playing = sp.currently_playing(additional_types='episode')
 
-	# Search for artist
-	if choice == "0":
-	    print()
-	    searchQuery = input("Ok, what's their name?:")
-	    print()
+	except spotipy.client.SpotifyException:
+		print('(spotify.py) re-authenticating')
+		auth = reauth()
+		playing = auth.currently_playing(additional_types='episode')
 
-	# Get search results
-	searchResults = spotifyObject.search(searchQuery,1,0,"artist")
-	# Print artist details
-	artist = searchResults['artists']['items'][0]
-	print(artist['name'])
-	print(str(artist['followers']['total']) + " followers")
-	print(artist['genres'][0])
-	print()
-	webbrowser.open(artist['images'][0]['url'])
-	artistID = artist['id']
-   # Album details
-	trackURIs = []
-	trackArt = []
-	z = 0
-    # Extract data from album
-	albumResults = spotifyObject.artist_albums(artistID)
-	albumResults = albumResults['items']
+	if not playing:
+		print("(spotify.py) nothing playing")
+		pass
+	if playing != None:
+		if playing['currently_playing_type'] == 'episode':
+			print("its a podcast!")
+			song['artist'] = playing['item']['show']['name']
+			song['track'] = playing['item']['name']
+			song['art'] = playing['item']['images'][0]['url']
+			song['type'] = "podcast"
+			song['position'] = playing['progress_ms']
+			song['duration'] = playing['item']['duration_ms']
+		else:
+			song['artist'] = playing['item']['artists'][0]['name']
+			song['album'] = playing['item']['album']['name']
+			song['track'] = playing['item']['name']
+			song['art'] = playing['item']['album']['images'][0]['url']
+			song['images']=playing['item']['album']['images']
+			song['type'] = "song"
+			song['position'] = playing['progress_ms']
+			song['duration'] = playing['item']['duration_ms']
 
-	for item in albumResults:
-		print("ALBUM: " + item['name'])
-		albumID = item['id']
-		albumArt = item['images'][0]['url']
+	elif sp.is_token_expired(token):
+		reauth()
+	return (song)
 
-		# Extract track data
-		trackResults = spotifyObject.album_tracks(albumID)
-		trackResults = trackResults['items']
+def search(search_terms):
+	search = sp.search(search_terms,type='track,artist',limit=1)
+	return(search)
 
-		for item in trackResults:
-			print(str(z) + ": " + item['name'])
-			trackURIs.append(item['uri'])
-			trackArt.append(albumArt)
-			z+=1
-		print()
+def set_volume(percent):
+	sp.volume(percent)
+
+def get_state(function):
+	playing = sp.current_playback()
+	if function == 'is_playing':
+		return playing['is_playing']
+	if function == 'toggling_shuffle':
+		return playing['shuffle_state']
+
+def control(command):
+	print("(Spotify.py) sending {} command".format(command))
+	if command == 'next':
+		sp.next_track()
+	elif command == 'previous':
+		sp.previous_track()
+	elif command == 'play':
+		sp.start_playback()
+	elif command == 'pause':
+		sp.pause_playback()
+	elif command == 'shuffle_on':
+		sp.shuffle(True)
+	elif command == 'shuffle_off':
+		sp.shuffle(False)

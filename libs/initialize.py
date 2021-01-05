@@ -1,3 +1,5 @@
+import os
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT']='hide'
 import pygame,os,sounddevice
 
 def current_res():
@@ -29,3 +31,7 @@ def get_audio_out():
 		if device['max_output_channels'] > 0:
 			device_list.append(device['name'])
 	return device_list
+
+def sources():
+	source_list = ['spotify','aux','bluetooth','usb']
+	return source_list

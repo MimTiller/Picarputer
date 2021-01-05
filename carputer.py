@@ -1,15 +1,16 @@
  #!/usr/bin/python
+
 #kivy imports
 from kivy.app import App
 from kivy.animation import Animation
 from kivy.core.window import Window
 from kivy.config import Config, ConfigParser
 from kivy.clock import Clock
-
 from kivy_garden.graph import MeshLinePlot, SmoothLinePlot
 from kivy.storage.jsonstore import JsonStore
 from kivy.uix.settings import SettingsWithNoMenu, SettingOptions, SettingsWithSidebar, SettingItem
 from kivy.metrics import dp
+
 #layouts
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
@@ -29,6 +30,7 @@ from kivy.uix.spinner import Spinner
 from kivy.uix.popup import Popup
 from kivy.uix.camera import Camera
 #kivyMD imports
+
 from kivymd.app import MDApp
 from kivymd.uix.snackbar import Snackbar
 from kivymd.toast import toast
@@ -36,6 +38,7 @@ from kivymd.uix.screen import MDScreen
 from kivymd.uix.bottomnavigation import *
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.button import *
+from kivymd.uix.label import *
 from kivymd.uix.behaviors import (
     CircularElevationBehavior,
     CircularRippleBehavior,
@@ -46,6 +49,8 @@ from kivymd.uix.behaviors import (
 from kivymd.theming import ThemableBehavior
 from kivy.uix.behaviors import ButtonBehavior
 from kivymd.theming import ThemeManager
+from kivymd.uix.dropdownitem import MDDropDownItem
+
 #misc
 from kivy.properties import (
     BooleanProperty,
@@ -56,42 +61,46 @@ from kivy.properties import (
     ObjectProperty,
     OptionProperty,
     StringProperty,)
+
 from kivy.logger import Logger
 from kivy.lang import Builder
 from kivy.properties import NumericProperty, StringProperty, BooleanProperty, ListProperty, ObjectProperty
 from kivy.uix.screenmanager import ScreenManager, Screen, NoTransition, SlideTransition, SwapTransition, FadeTransition, WipeTransition, FallOutTransition, RiseInTransition
 from kivy.utils import get_color_from_hex as rgb
 from kivy.graphics import *
+
 #non kivy imports
 from time import time
 from random import shuffle
 from multiprocessing import Process
 import re, sys, os, random, threading, time, eyed3, mutagen, glob
 import dataset, usb, psutil, importlib, json, concurrent.futures
-
-from libs import tagger, audio, vlc, btdevices, initialize, settings
+from libs import tagger, audio, vlc, btdevices, initialize, settings, spotify, speech
 from libs.settings import SettingSlider, MySettings
-
 from threading import Thread
 from collections import defaultdict
 from os import path
 from functools import partial
-
+import urllib
+import asyncio
+import speech_recognition as sr
 #==================CONFIGURATION========================================#
 									    								#Force a resolution, or just comment out
-screenupdatetime = 0.5													#how fast slider and song info updates. use lower values for faster time, but more cpu work
+screenupdatetime = 0.5
+musicupdatetime = 2.0													#how fast slider and song info updates. use lower values for faster time, but more cpu work
 MusicDirectory="/home/subcake/Music"									#change what folder PiCarputer looks in for your music
 #=======================================================================#
 
 
-playicon = 'data/icons/play.png'
-pauseicon = 'data/icons/pause.png'
+
 db = dataset.connect('sqlite:///songlist.db')
 table = db['songs']
 settingsdb = db['settings']
 global graph
-#global wallpaper
-graph = []
+
+
+
+
 
 #--------------------------------#KIVY#------------------------------------
 #pass clickable button behavior
@@ -113,7 +122,9 @@ class Root(MDScreen):
 	pass
 class VolumeSlider(AnchorLayout):
 	pass
-class PlayButtons(AnchorLayout):
+class Source(MDDropDownItem):
+	pass
+class PlayButtons(BoxLayout):
 	pass
 class Scroller1(FloatLayout):
 	pass
@@ -124,12 +135,21 @@ class BigScreenInfo(BoxLayout):
 class Notify(FloatLayout):
 	pass
 
+class DynamicLabel(MDLabel):
+	multiplier = NumericProperty(1)
 
+
+
+class IconSizer(MDIconButton):
+	multiplier = NumericProperty(1)
+
+class VoiceRecognizer(BoxLayout):
+	orientation = 'horizontal'
 
 class WallPaper(Image):
 	wallpaper_selection = StringProperty()
 	config = ConfigParser()
-	config.read('main.ini')
+	config.read('carputer.ini')
 	try:
 		wallpaper = config.get('Default', 'wallpaper')
 	except:
@@ -137,12 +157,9 @@ class WallPaper(Image):
 	wpd = str('data/wallpapers/' + wallpaper)
 	wallpaper_selection = wpd
 
-class NotificationSnackbar(Snackbar):
-	icon = StringProperty()
 
-class BackupCam(Camera):
-	play = True
-	resolution=Window.size
+
+
 #-----------------------MAIN-FUNCTIONS---------------------------------#
 class MainThread(FloatLayout):
 	instance = vlc.Instance()
@@ -154,43 +171,60 @@ class MainThread(FloatLayout):
 	def __init__(self, **kwargs):
 		super(MainThread ,self).__init__(**kwargs)
 		Clock.schedule_interval(self.refresh, screenupdatetime)
-		Clock.schedule_once(self.start_thread,0)
+		Clock.schedule_interval(self.songinfoupdate, musicupdatetime)
+		self.threads = [self.perf_graph]
+		Clock.schedule_once(partial(self.start_threads,targets=self.threads),1)
 		Window.bind(on_resize=self.on_window_resize)
-		self.startupvolume = 75
-		#self.buttonlist=[]
-		#self.artistlist=[]
-		#self.artistlistbool = False
-		#self.level = "artist"
-		self.notshuffled = []
+		self.font_scaling = NumericProperty()
 		self.num = 0
 		self.shuffle = True
-		#self.dir_num = 13
-		#self.artist_loaded = False
 		self.artist = ''
 		self.album = ''
 		self.title = ''
 		self.image = ''
-		#self.splash = 1
+		self.play = False
 		self.wallpaperlist = ListProperty()
 		self.currentscreen = 1
 
+	#cosmetic functions
 	def on_window_resize(self,window,width,height):
-		self.menu_font_update()
+		self.icon_font_update()
 
-	def menu_font_update(self):
+	def icon_font_update(self):
+		for icon in ['shuffle','previous_track','playpause','next_track']:
+			multiplier = self.ids[icon].multiplier
+			self.ids[icon].user_font_size = self.icon_size(multiplier)
+
 		for button in ['musicicon','obdicon','perficon','settingsicon']:
 			icon = button[:-4]
-			self.ids[icon].user_font_size = self.ids[button].size[1]
+			self.ids[icon].user_font_size = self.ids[button].size[1]/1.1
 
-	def snackbar(self,widget,title,message,timeout):
-		toast(message)
+	def icon_size(self,multiplier):
+		width = Window.width
+		size = width * .1 * multiplier
+		size = str(size) + "sp"
+		return(size)
 
-	def hide_notify(self,widget,*args):
-		notification = widget.root.ids.notify
-		anim = Animation(pos_hint={'x':1},duration=.3)
-		anim.start(notification)
+	def font_update(self):
+		width = Window.width
+		for text in ['bigscreenartist','bigscreentitle','bigscreenalbum']:
+			multiplier = self.ids[text].multiplier
+			text_length = len(self.ids[text].text)
+			if text_length > 50:
+				scale = 1.5
+				multiplier = multiplier/scale
+			size = width * 0.05 * multiplier
+			self.ids[text].font_size = size
+
+	def recognize_voice(self):
+		voice_button = self.ids.voicecontrol
+		anim = Animation(pos_hint={'y':0.5},duration=0.5)
+		anim.start(voice_button)
+		anim = Animation(pos_hint={'y':0.9},duration=0.5)
+		anim.start(voice_button)
 
 	def notify(self,widget,title,message,timeout):
+		print("(main.py) notify:")
 		notification = widget.root.ids.notify
 		msg = widget.root.ids.notifymessage
 		msg.text = str(message)
@@ -198,14 +232,15 @@ class MainThread(FloatLayout):
 		ttl.text = str(title)
 		anim = Animation(pos_hint={'x':0.72},duration=.3)
 		anim.start(notification)
-		Clock.schedule_once(partial(self.hide_notify,self,widget),float(timeout))
+		anim = Animation(pos_hint={'x':1},duration=.3)
+		anim.start(notification)
 
 	def slide_screen(self,instance,screenname):
 		for button in ['music','obd','perf','settings']:
-			self.ids[button].text_color = MainApp().theme_cls.primary_color
-			self.ids[str(button + "label")].color = MainApp().theme_cls.primary_color
-		self.ids[screenname].text_color = MainApp().theme_cls.accent_color
-		self.ids[str(screenname + "label")].color = MainApp().theme_cls.accent_color
+			self.ids[button].text_color = CarputerApp().theme_cls.primary_color
+			self.ids[str(button + "label")].color = CarputerApp().theme_cls.primary_color
+		self.ids[screenname].text_color = CarputerApp().theme_cls.accent_color
+		self.ids[str(screenname + "label")].color = CarputerApp().theme_cls.accent_color
 		if int(instance) > int(self.currentscreen):
 			self.ids.st.transition = SlideTransition(direction="left")
 			self.currentscreen = instance
@@ -216,127 +251,32 @@ class MainThread(FloatLayout):
 			pass
 		self.ids.st.current = screenname
 
-	def playpause(self):
-		state = str(self.player.get_state())
-		if state == "State.NothingSpecial":
-			print ("[playpause] starting first time playback")
-			self.ids.playpausebutton.source = playicon
-			try:
-				media = instance.media_new_path(self.next_Song)
-				player.set_media(media)
-				self.player.play()
-			except:
-				print ("error...couldnt play")
-		elif state== "State.Playing":
-			print ("[playpause] paused")
-			self.ids.playpausebutton.source = playicon
-			self.player.pause()
-		elif state == "State.Paused":
-			print ("[playpause] resuming")
-			self.ids.playpausebutton.source = pauseicon
-			self.player.play()
 
-	def shuffleicon(self):
-		if self.shuffle == True:
-			self.shuffle = False
-			self.ids.shuffle.theme_text_color: "Custom"
-			self.ids.shuffle.text_color: MainApp().theme_cls.primary_light
-			self.notshuffle = 0
-			print ("Shuffle Off")
-		elif self.shuffle == False:
-			self.shuffle = True
-			self.ids.shuffle.theme_text_color: "Custom"
-			self.ids.shuffle.text_color: MainApp().theme_cls.primary_color
-			print ("Shuffle On")
-		self.num = 0
-		self.dir = 0
 
-	def next_file(self,direction):
-		self.num += direction
-		if self.shuffle == True:
-			self.level = 'artist'
-			try:
-				self.next_Song = self.shufflelist[self.num]				#try opening the shufflelist and playing the specified song
-			except:
-				self.shufflelist = []									#if list doesnt exist:
-				for x in table.distinct('location'):
-					self.shufflelist.append(x['location'])				#add all songs to the list
-					shuffle(self.shufflelist)							#shuffle the list
-				self.next_Song = self.shufflelist[self.num]				#then try opening the specified song
-		else:
-			songlist = []
-			tracklist = []
-			for song in table.find(artist = tagger.artist, album = tagger.album):
-				songlist.append(str(song['location']))
-				tracklist.append(int(song['track']))
-			tracksort = sorted(zip(tracklist,songlist))
-			sortedtitle = [title for track, title in tracksort]
-			try:
-				print (songlist)
-				self.dir += direction
-				self.next_Song = sortedtitle[self.dir]
-				print (self.dir)
-			except:
-				self.dir = 0
-				self.next_Song = sortedtitle[self.dir]
-				print (self.dir)
-		self.media = self.instance.media_new_path(self.next_Song)
-		self.player.set_media(self.media)
-		self.player.play()
-		self.refresh_Screen(self.next_Song)
-		self.ids.playpausebutton.source = pauseicon
-		print (self.next_Song)
+	#control functions:
+	def control(self,control_msg):
+		#get current source:
+		app = App.get_running_app()
+		source = app.config.get('Default','audio_source')
+		if source == 'spotify':
+			if control_msg == 'playpause':
+				is_playing = spotify.get_state('is_playing')
+				if is_playing:
+					control_msg = 'pause'
+				else:
+					control_msg = 'play'
+			if control_msg == 'shuffle':
+				is_shuffle = spotify.get_state('toggling_shuffle')
+				if is_shuffle:
+					control_msg = 'shuffle_off'
+				else:
+					control_msg = 'shuffle_on'
+			spotify.control(control_msg)
 
-	def next_button(self):
-		self.next_file(1)
 
-	def back_button(self):
-		self.next_file(-1)
+	def set_source(self,source):
+		pass
 
-	def refresh_Screen(self,song):
-		x = table.find_one(location=song)
-		try:
-			art = x['albumart']
-		except:
-			print ("art wasnt found")
-		root, filename = os.path.split(song)
-		tagger.filetagger(root, filename)
-		self.songinfoupdate(song)
-		self.slider_max(song)
-		self.browser("refresh")
-		self.cpu_counter()
-		try:
-			self.album_art.source=art
-		except:
-			self.album_art.source='data/icons/unknown.png'
-	#called every time specified in the configuration
-	def refresh(self, dt):
-		self.perf_counter()
-		state = str(self.player.get_state())
-		duration = int(self.player.get_length()/1000)
-		position = int(self.player.get_time()/1000)
-		if position == -1:
-			return
-		#change time from seconds to minutes and seconds
-		m, s = divmod(position, 60)
-		if s < 10:
-			s = '%02d' %s
-		#update song position text
-		try:
-			self.ids.songpos.text = "{0}:{1}".format(m, s)
-			remainder = duration - int(position)
-			m, s = divmod(remainder, 60)
-			if s < 10:
-				s = '%02d' %s
-			#update remaining time left on song and slider
-			self.ids.songlength.text = "{0}:{1}".format(m, s)
-			self.slider.value = position / screenupdatetime
-			if state == "State.Ended":
-				print ("{0} ended".format(self.title))
-				self.level = 'artist'
-				self.next_button()
-		except:
-			pass
 
 	def play_title(self, search_artist, search_album, search_title):	#send artist album and title and this will play the file and refresh the screen
 		self.artist = search_artist
@@ -354,13 +294,41 @@ class MainThread(FloatLayout):
 			else:
 				pass
 
-	def slider_max(self, song):
-		for x in table.find(location=song):
-			length = x['length']
-		#returns the max for the song length slider (max value depends on how quickly it gets updated)
-		self.slider.max = length / screenupdatetime
-		print (self.slider.max)
+	#refreshers
+	def refresh_Screen(self,song):
+		x = table.find_one(location=song)
+		try:
+			art = x['albumart']
+		except:
+			print ("art wasnt found")
+		root, filename = os.path.split(song)
+		tagger.filetagger(root, filename)
 
+		self.slider_max(song)
+		self.browser("refresh")
+		self.cpu_counter()
+		try:
+			self.album_art.source=art
+		except:
+			self.album_art.source='data/icons/unknown.png'
+
+
+	def refresh(self, dt):
+		self.perf_counter()
+		self.font_update()
+		is_playing = spotify.get_state('is_playing')
+		if is_playing == True:
+			self.ids.playpause.icon = 'pause'
+		else:
+			self.ids.playpause.icon = 'play'
+		is_shuffle = spotify.get_state('toggling_shuffle')
+
+
+		#if is_shuffle:
+			#self.ids.shuffle.text_color = CarputerApp().theme_cls.accent_color
+		#else:
+			#self.ids.shuffle.text_color = CarputerApp().theme_cls.primary_color
+	#initialization
 	def volslider(self, value):
 		self.player.audio_set_volume(int(value))
 
@@ -368,35 +336,86 @@ class MainThread(FloatLayout):
 		try:
 			volume = App.get_running_app().config.get('Default','startupvolume')
 		except:
+			print("volstartup: couldnt get volume from config")
 			volume = 75
 		#self.player.audio_set_volume(float(volume))
 		return int(float(volume))
 
+	oldtrack = ''
 
-	#take song, look up file in database, extract artist album, and title
-	def songinfoupdate(self, song):
-		for x in table.find(location = song):
-			artist = str(x['artist'])
-			album = str(x['album'])
-			title = str(x['title'])
-			bitrate = str(x['bitrate'])
-			size = str(x['size'])
-			track = str(x['track'])
-			#if the song is over 30 characters, limit it
-			if len(artist) > 30:
-				artist = (artist[:30] + '...')
-		#update bigscreen info
-		self.ids.songinformation.text = "{0}  --  {1}".format(artist,title)
-		self.ids.bigscreenartist.text = artist
-		self.ids.bigscreentitle.text = title
-		self.ids.bigscreenalbum.text = album
+
+
+	#display all the song info on the music screen
+	def songinfoupdate(self,dt):
+		try:
+			track = spotify.get_playing()
+			if not track['position']:
+				print("Not playing currently")
+			pos = int(track['position']/1000)
+			dur = int(track['duration']/1000)
+			if track['track'] == self.oldtrack:
+				pass
+			else:
+				print("(main.py) new track")
+				if track['type'] == "podcast":
+					artist = track['artist']
+					title = track['track']
+					art = track['art']
+					print("(main.py) {} : {}".format(artist,title))
+					albumart = urllib.request.urlretrieve(art,"temp.png")
+					self.ids.bigscreenartist.text = artist
+					self.ids.bigscreentitle.text = title
+					self.ids.bigscreenalbum.text = ''
+					self.album_art.source="temp.png"
+					self.album_art.reload()
+					self.oldtrack = track['track']
+
+				elif track['type'] == 'song':
+
+					artist = track['artist']
+					album = track['album']
+					title = track['track']
+					art = track['art']
+					print("(main.py) {} : {} : {}".format(artist,album,title))
+					albumart = urllib.request.urlretrieve(art,"temp.png")
+					#update bigscreen info
+					self.ids.bigscreenartist.text = artist
+					self.ids.bigscreentitle.text = title
+					self.ids.bigscreenalbum.text = album
+					self.album_art.source="temp.png"
+					self.album_art.reload()
+					self.oldtrack = track['track']
+
+			#change time from seconds to minutes and seconds
+			m, s = divmod(pos, 60)
+			if s < 10:
+				s = '%02d' %s
+			#update song position text
+			try:
+				self.ids.songpos.text = "{0}:{1}".format(m, s)
+				m, s = divmod(dur, 60)
+				if s < 10:
+					s = '%02d' %s
+				#update remaining time left on song and slider
+				self.ids.songlength.text = "{0}:{1}".format(m, s)
+				self.slider.max = dur
+				self.slider.value = pos
+			except Exception as e:
+				print("(songinfoupdate) failed to update time")
+				print(e)
+		except Exception as e:
+			print("(songinfoupdate) failed to fetch info!")
+			print(e)
+
 
 	def perf_counter(self):
 		try:
 			self.ids.CPU.text = "CPU: " + str(psutil.cpu_percent()) + "%"
 			self.ids.RAMpc.text = "RAM Used: " + str(psutil.virtual_memory().percent) + "%"
+
 		except:
 			pass
+
 		#self.ids.RAM.text = ": " + str(round(psutil.virtual_memory().total/1024/1024/1024, 2)) + "GB"
 
 	def perf_graph(self):
@@ -420,47 +439,62 @@ class MainThread(FloatLayout):
 			try:
 				self.ramgraph.add_plot(RAMplot)
 				self.cpugraph.add_plot(cpuplot)
-			except:
-				pass
-			#print (graph['cpu'])
-			time.sleep(0.6)
+			except Exception as e:
+				print("(perf_graph) {}".format(e))
+			time.sleep(screenupdatetime)
 
-	def start_thread(self,dt):
+	def start_threads(self,dt,targets):
 		global graph
 		graph = defaultdict(list)
-		#graphdaemon = Thread(target = self.perf_graph)
-		#graphdaemon.daemon = True
-		#graphdaemon.start()
+		print('(main.py) starting threads: {}'.format([x.__name__ for x in targets]))
+		for target in targets:
+			daemon = Thread(target = target)
+			daemon.daemon = True
+			daemon.start()
+
 #_______________________________#MAIN APP#______________________________
 
-class MainApp(MDApp):
+class CarputerApp(MDApp):
 	def __init(self,**kwargs):
-		self.theme_cls.primary_palette = "Blue"
 		self.theme_cls.theme_style = "Dark"
+		#load the config file
 		self.config = ConfigParser()
-		self.config.read('main.ini')
+		self.config.read('carputer.ini')
 		self.timeout = NumericProperty()
 
+
+
 	def build(self):
+		#declare the settings class
 		self.settings_cls = MySettings
+		#set an icon
 		self.icon = 'music.png'
-		build = Builder.load_file('carputer.ky')
-		#build.add_widget(PlayButtons())
-		#build.add_widget(VolumeSlider())
-		#build.add_widget(BigScreenInfo())
-		return build
+		#set primary and accent colors from config
+		self.theme_cls.primary_palette = self.config.get('Default', 'themecolor')
+		self.theme_cls.accent_palette	= self.config.get('Default', 'accentcolor')
+		print("(main.py) Initializing: Theme Color ({}) and Accent Color ({}) set".format(self.theme_cls.primary_palette,self.theme_cls.accent_palette))
+
 
 	def build_config(self,config):
-		config.setdefaults("Default", {
+		self.config.setdefaults("Default", {
 			"resolutions": initialize.current_res(),
 			"fullscreen": 0,
 			"wallpaper": "blackbox.jpg",
 			"startupvolume": 75,
+			"audio_source": "Spotify",
 			"bt_list": "Click to connect...",
 			"notificationtimeout":2,
 			"themecolor": "Blue",
-			"accentcolor": "LightBlue",
+			"accentcolor": "Orange",
 			"audio_output":"None"})
+
+
+
+	def on_start(self):
+		s = self.create_settings()
+		self.root.ids.settingsscreen.add_widget(s)
+		print("(main.py) Initializing: Settings Created")
+
 		try:
 			#Get config resolution
 			conf_res = self.config.get('Default', 'resolutions').split('x')
@@ -478,21 +512,19 @@ class MainApp(MDApp):
 			Window.top=30
 			Window.left=0
 
-		except:
+			Window.size = confw,confh
+			print("(main.py) Initializing: resolution ({}x{}) and fullscreen mode ({}) set".format(confw,confh,fs))
+
+		except Exception as e:
+			print("error: {}".format(e))
 			self.timeout = 1
 			#get current screen resolution
 			x = initialize.current_res().split('x')
 			height = int(x[1])
 			width = int(x[0])
-
 			Window.size = width,height
 			Window.fullscreen=False
-
-
-	def on_start(self):
-		s = self.create_settings()
-		self.root.ids.settingsscreen.add_widget(s)
-
+		print("(main.py) Initializing: finished startup ")
 
 	def build_settings(self,settings):
 		with settings.canvas.before:
@@ -502,15 +534,15 @@ class MainApp(MDApp):
 			Rectangle(pos=(0,0), size=(10000,10000))
 		data = settings.json_settings
 		settings.add_json_panel("Default", self.config, data=data)
-
+		print("(main.py) building settings...")
 
 	def on_config_change(self,config,section,key,value):
 		title = "Settings"
 		self.timeout = config.get('Default','notificationtimeout')
+
 		if key == "startupvolume":
 			self.startupvolume = int(float(value))
 			message = "Volume changed to {}".format(value)
-			MainThread.snackbar(MainThread,self,title=title,message=message,timeout=self.timeout)
 			MainThread.notify(MainThread,self,title=title,message=message,timeout=self.timeout)
 
 		if key == "bt_list":
@@ -521,13 +553,19 @@ class MainApp(MDApp):
 			height = int(x[1])
 			width = int(x[0])
 			Window.size = width,height
+			message = "Resolution set to {}".format(value)
+			MainThread.notify(MainThread,self,title=title,message=message,timeout=self.timeout)
 
 		if key == "fullscreen":
 			print (value)
 			if value == '1':
 				Window.fullscreen = True
+				fullscreen= "turned on"
 			else:
 				Window.fullscreen = False
+				fullscreen = "turned off"
+			message = "fullscreen {}".format(fullscreen)
+			MainThread.notify(MainThread,self,title=title,message=message,timeout=self.timeout)
 
 		if key == "wallpaper":
 			wp = 'data/wallpapers/' + value
@@ -547,12 +585,16 @@ class MainApp(MDApp):
 			message = "Changed main theme color to {}".format(value)
 			MainThread.notify(MainThread,self,title=title,message=message,timeout=self.timeout)
 			self.theme_cls.primary_palette = value
+
 		if key == "accentcolor":
 			message = "Changed accent color to {}".format(value)
 			MainThread.notify(MainThread,self,title=title,message=message,timeout=self.timeout)
 			self.theme_cls.accent_palette = value
-			MT = App.get_running_app()
 
+		if key == "default_source":
+			message = "Changed audio source to {}".format(value)
+			MainThread.notify(MainThread,self,title=title,message=message,timeout=self.timeout)
+			MainThread.set_source(value)
 
 if __name__ == "__main__":
-	MainApp().run()
+	CarputerApp().run()

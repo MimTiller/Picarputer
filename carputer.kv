@@ -4,7 +4,7 @@
 
 
 
-
+#circle maker for color settings
 <ColorSelector>
     canvas:
         Color:
@@ -13,6 +13,7 @@
             size: self.size[0]-20,self.size[1]-20
             pos: self.x + 10, self.y + 10
 	id: root.color_name
+
 
 
 #for custom scrollview setting
@@ -27,6 +28,7 @@
 <SettingColorPicker>
 	Label:
 		text: str(root.value) or ''
+
 
 <Separator@Widget>:
 	canvas:
@@ -55,7 +57,6 @@ MainThread:
 		anchor_y: 'center'
 
 
-		#wallpaper, works on every screen minus settings screen
 		WallPaper:
 			id: wallpp
 			source: self.wallpaper_selection
@@ -71,82 +72,222 @@ MainThread:
 		ScreenManagement:
 			transition: SlideTransition()
 			id: st
-			size_hint: 1, 0.74
+			size_hint: 1, 1
+
 			MusicScreen:
 				name: 'music'
-				FloatLayout:
-					size_hint: 1, 1
-					Image:
-						pos_hint:{'x':-0.2,'y':0}
-						id: album_art
-						source: 'data/icons/unknown.png'
-						allow_stretch: True
 
-				BigScreenInfo:
-					id: hiddeninfo
-					size_hint: 0.455, 0.75
-					pos_hint: {"x": 0, 'y': 0.0}
+				BoxLayout:
+					orientation: 'vertical'
+					size_hint: 1, 0.8
+					pos_hint:{'x':0,'y':0.15}
+
 					BoxLayout:
-						orientation: 'vertical'
-						Label:
-							id: bigscreentitle
-							font_size: 40
-							text_size: self.width , None
-							size: self.texture_size
-							halign: 'center'
+						orientation: 'horizontal'
+						size_hint_x: 0.97
+						#album artwork
+						Image:
+							#size_hint_x: 0.8
+							id: album_art
+							source: 'data/icons/unknown.png'
+							allow_stretch: True
 
-						Label:
-							id: bigscreenartist
-							size_hint: 1, 0.3
-							font_size: self.height/1.7
-							text_size: self.size
-							halign: 'center'
+						BoxLayout:
+							orientation: 'vertical'
+							#source selection
+							BoxLayout:
+								orientation:'horizontal'
+								size_hint: 1,0.2
+								Label:
+									size_hint: 0.9,1
+								IconButton:
+									size_hint: 0.1,1
+									orientation: 'vertical'
+									MDIconButton:
+										canvas:
+											Color:
+												rgba: .9, .9, .9, .1
+											RoundedRectangle:
+												pos: self.pos
+												size: self.size
+												radius: 100,100,100,100
+										icon: 'bluetooth'
+										theme_text_color: 'Custom'
+										text_color: app.theme_cls.primary_color
+									MDIconButton:
+										icon: 'spotify'
+										theme_text_color: 'Custom'
+										text_color: app.theme_cls.primary_color
 
-						Label:
-							id: bigscreenalbum
-							text_size: self.width , None
-							size: self.texture_size
-							halign: 'center'
-							font_size: 20
+							#track name, artist, album
+							DynamicLabel:
+								id: bigscreenartist
+								multiplier: 0.3
+								text_size: self.width , None
+								size_hint: 1,0.1
+								valign: 'bottom'
+								halign: 'center'
+								theme_text_color: 'Custom'
+								text_color: app.theme_cls.accent_color
+
+							DynamicLabel:
+								id: bigscreentitle
+								size_hint: 1,0.3
+								multiplier: 0.8
+								#text_size: self.width , None
+								halign: 'center'
+								theme_text_color: 'Custom'
+								text_color: app.theme_cls.accent_color
+
+							DynamicLabel:
+								id: bigscreenalbum
+								multiplier: 0.4
+								text_size: self.width , None
+								size_hint: 1,0.1
+								valign: 'top'
+								halign: 'center'
+								theme_text_color: 'Custom'
+								text_color: app.theme_cls.accent_color
+
+
+
+
+							#Pause/Next/Back
+							BoxLayout:
+								orientation: 'horizontal'
+								size_hint: 1, 0.3
+								canvas:
+									Color:
+										rgba: .9, .9, .9, .1
+									RoundedRectangle:
+										pos: self.pos
+										size: self.size
+										radius: 100,100,100,100
+								IconSizer:
+									id: shuffle
+									multiplier: 0.25
+									pos_hint: {'x':0.5,'y':0.6}
+									size_hint: 0.05, 0.3
+									icon: 'shuffle'
+									theme_text_color: "Custom"
+									text_color: app.theme_cls.primary_color
+									on_press: root.control("shuffle")
+
+								IconSizer:
+									id: previous_track
+									#cheating, using "name" as a custom variable to scale the icons to the size needed
+									multiplier: 1
+									valign: "top"
+									icon: 'skip-previous'
+									size_hint: 0.06, 1
+									theme_text_color: "Custom"
+									text_color: app.theme_cls.primary_color
+									on_press: root.control("previous")
+
+								IconSizer:
+									id: playpause
+									multiplier: 1
+									valign: "top"
+									icon: 'play'
+									size_hint: 0.15, 1
+									theme_text_color: "Custom"
+									text_color: app.theme_cls.primary_color
+									on_press: root.control("playpause")
+
+								IconSizer:
+									id: next_track
+									multiplier: 1
+									valign: "top"
+									icon: 'skip-next'
+									size_hint: 0.1, 1
+									theme_text_color: "Custom"
+									text_color: app.theme_cls.primary_color
+									on_press: root.control("next")
+
+
+
+					BoxLayout:
+						orientation: 'horizontal'
+						size_hint: 1,0.1
+
+						MDLabel:
+							id: songpos
+							text: "0:00"
+							halign: "center"
+							size_hint: 0.06,1
+							theme_text_color: 'Custom'
+							text_color: app.theme_cls.primary_color
+							font_size: songpos.height/2.5
+
+						MDProgressBar:
+							id: slider
+							size_hint: 0.88, 1
+							cursor_size: 20, 20
+
+						MDLabel:
+							id: songlength
+							size_hint: 0.06,1
+							theme_text_color: 'Custom'
+							text_color: app.theme_cls.primary_color
+							text: "--:--"
+							halign: "center"
+							font_size: songlength.height/2.5
+
+
+							#Song Timers/Seek slider
+
+
+
+
 
 
 			OBDIIScreen:
 				name: 'obd'
-				BackupCam:
-					id:camera
+
 
 
 			PerfScreen:
 				name: 'perf'
+
 				BoxLayout:
 					size_hint: 0.95, 1
 					orientation: 'vertical'
+
 					BoxLayout:
+
 						Graph:
 							size_hint: 0.24, 1
 							id: cpugraph
+
 						Graph:
 							size_hint: 0.24, 1
 							id: ramgraph
+
 						Graph:
 							size_hint: 0.24, 1
 							id: netupgraph
+
 						Graph:
 							size_hint: 0.24, 1
 							id: netdowngraph
+
 					BoxLayout:
+
 						Button:
 							id: CPU
 							size_hint: 0.22, 1
 							background_color: 0, 0, 0, 0
+
 						Button:
 							id: RAMpc
 							size_hint: 0.22, 1
 							background_color: 0, 0, 0, 0
+
 						Button:
 							id: netup
 							size_hint: 0.22, 1
 							background_color: 0, 0, 0, 0
+
 						Button:
 							id: netdown
 							size_hint: 0.22, 1
@@ -155,11 +296,13 @@ MainThread:
 			SettingsScreen:
 				icon: 'settings'
 				name: 'settings'
+
 				BoxLayout:
 					id: settingsscreen
 
 
 		Notify:
+
 			MDBoxLayout:
 				canvas.before:
 					Color:
@@ -179,7 +322,9 @@ MainThread:
 					halign: 'center'
 					text_size: self.texture_size
 					size_hint: 1, 0.5
+
 				Hseparator
+
 				MDLabel:
 					color: 1,1,1,1
 					id: notifymessage
@@ -193,7 +338,7 @@ MainThread:
 	        BoxLayout:
 				canvas.before:
 					Color:
-						rgba: .3,.3,.3,0.85
+						rgba: .3,.3,.3,0.75
 					Rectangle:
 						pos: self.pos
 						size: self.size
@@ -310,89 +455,11 @@ MainThread:
 						text: "Settings"
 						color: app.theme_cls.primary_color
 
-			PlayButtons:
-				anchor_x: 'center'
-				anchor_y: 'top'
-				BoxLayout:
-					size_hint: 1, .085
-					pos_hint: {"x": 0, 'y':0.1}
-					orientation: 'vertical'
-					padding: 7,7,0,0
-					BoxLayout:
-						orientation: 'horizontal'
-
-						MDIconButton:
-							id: last_track
-							icon: 'skip-previous'
-							user_font_size: "64sp"
-							size_hint: 0.055, 1
-							theme_text_color: "Custom"
-							text_color: app.theme_cls.primary_color
-							on_press: root.back_button()
-
-						MDIconButton:
-							id: playpause
-							icon: 'play'
-							user_font_size: "64sp"
-							size_hint: 0.055, 1
-							theme_text_color: "Custom"
-							text_color: app.theme_cls.primary_color
-							on_press: root.back_button()
-
-						MDIconButton:
-							id: next
-							icon: 'skip-next'
-							user_font_size: "64sp"
-							size_hint: 0.055, 1
-							theme_text_color: "Custom"
-							text_color: app.theme_cls.primary_color
-							on_press: root.back_button()
-						BoxLayout:
-							orientation: 'vertical'
-							size_hint: 0.045, 1
-							Button:
-								background_color:(0.9, 0.9, 0.9, 0.0)
-							MDIconButton:
-								id: shuffle
-								icon: 'shuffle'
-								theme_text_color: "Custom"
-								text_color: app.theme_cls.primary_color
-								on_press: root.shuffleicon()
-
-
-						BoxLayout:
-							orientation: 'horizontal'
-							MDLabel:
-								id: songpos
-								text: "0:00"
-								size_hint: 0.06,1
-								theme_text_color: 'Custom'
-								text_color: app.theme_cls.primary_color
-								font_size: songpos.height/2.5
-
-							BoxLayout:
-								orientation: 'vertical'
-								Label:
-									id: songinformation
-									background_color:(0.5,0.5,0.5,0.5)
-									font_size: songinformation.height/2
-								MDProgressBar:
-									id: slider
-									size_hint: 1, 0.35
-									cursor_size: 20, 20
-
-							MDLabel:
-								id: songlength
-								size_hint: 0.06,1
-								theme_text_color: 'Custom'
-								text_color: app.theme_cls.primary_color
-								text: "--:--"
-								font_size: songlength.height/2.5
 
 	VolumeSlider:
 		id: volumecontrol
-		size_hint: .05 , 0.78
-		pos_hint: {"x": 0.93, 'y':0.11}
+		size_hint: .04 , 0.78
+		pos_hint: {"x": 0.96, 'y':0.2}
 		orientation: 'vertical'
 
 		MDSlider:
@@ -403,3 +470,9 @@ MainThread:
 			orientation: 'vertical'
 			id: volumeslider
 			on_value: root.volslider(self.value)
+
+	VoiceRecognizer:
+		id: voicecontrol
+		size_hint: 0.2,0.07
+		pos_hint: {'center_x': 0.5,'y':0.93}
+		Button:
