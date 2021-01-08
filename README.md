@@ -5,8 +5,11 @@ This is the repo for Picarputer, a python Car Display/UI for the Raspberry Pi
 
 ## Requirements:
 x86 PC 
+
 Raspberry Pi or other ARM based processor
+
 Python 3.5+ 
+
 Python3-pip
 
 
