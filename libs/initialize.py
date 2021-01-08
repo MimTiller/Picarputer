@@ -33,5 +33,5 @@ def get_audio_out():
 	return device_list
 
 def sources():
-	source_list = ['spotify','aux','bluetooth','usb']
+	source_list = ['Spotify','Aux','Bluetooth','USB']
 	return source_list

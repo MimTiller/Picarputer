@@ -100,9 +100,18 @@ MainThread:
 								size_hint: 1,0.2
 								Label:
 									size_hint: 0.9,1
-								IconButton:
+								BoxLayout:
+									orientation:'vertical'
 									size_hint: 0.1,1
-									orientation: 'vertical'
+									DynamicLabel:
+										id: source_label
+										multiplier: 0.22
+										text_size: self.width , None
+										text: root.source
+										theme_text_color: 'Custom'
+										text_color: app.theme_cls.primary_color
+										halign: 'center'
+										size_hint: 1,0.3
 									MDIconButton:
 										canvas:
 											Color:
@@ -111,13 +120,15 @@ MainThread:
 												pos: self.pos
 												size: self.size
 												radius: 100,100,100,100
-										icon: 'bluetooth'
+										id: source_button
+										icon: root.source.lower()
 										theme_text_color: 'Custom'
 										text_color: app.theme_cls.primary_color
-									MDIconButton:
-										icon: 'spotify'
-										theme_text_color: 'Custom'
-										text_color: app.theme_cls.primary_color
+										on_release: root.select_source(self)
+										size_hint: 1,0.3
+
+
+
 
 							#track name, artist, album
 							DynamicLabel:
@@ -153,7 +164,7 @@ MainThread:
 
 
 							#Pause/Next/Back
-							BoxLayout:
+							FloatLayout:
 								orientation: 'horizontal'
 								size_hint: 1, 0.3
 								canvas:
@@ -166,43 +177,42 @@ MainThread:
 								IconSizer:
 									id: shuffle
 									multiplier: 0.25
-									pos_hint: {'x':0.5,'y':0.6}
-									size_hint: 0.05, 0.3
+									pos_hint: {'x':0.03,'y':0.6}
 									icon: 'shuffle'
-									theme_text_color: "Custom"
+									theme_text_color: 'Custom'
 									text_color: app.theme_cls.primary_color
-									on_press: root.control("shuffle")
+									on_press: root.control('shuffle')
 
 								IconSizer:
 									id: previous_track
-									#cheating, using "name" as a custom variable to scale the icons to the size needed
+									#multiplier variable declared in the IconSizer class
 									multiplier: 1
-									valign: "top"
+									valign: 'top'
 									icon: 'skip-previous'
-									size_hint: 0.06, 1
-									theme_text_color: "Custom"
+									pos_hint: {'center_x':0.2,'center_y':0.5}
+									theme_text_color: 'Custom'
 									text_color: app.theme_cls.primary_color
-									on_press: root.control("previous")
+									on_press: root.control('previous')
 
 								IconSizer:
 									id: playpause
 									multiplier: 1
-									valign: "top"
+									valign: 'top'
 									icon: 'play'
-									size_hint: 0.15, 1
-									theme_text_color: "Custom"
+									pos_hint: {'center_x':0.5,'center_y':0.5}
+									theme_text_color: 'Custom'
 									text_color: app.theme_cls.primary_color
-									on_press: root.control("playpause")
+									on_press: root.control('playpause')
 
 								IconSizer:
 									id: next_track
 									multiplier: 1
-									valign: "top"
+									valign: 'top'
 									icon: 'skip-next'
-									size_hint: 0.1, 1
-									theme_text_color: "Custom"
+									pos_hint: {'center_x':0.8,'center_y':0.5}
+									theme_text_color: 'Custom'
 									text_color: app.theme_cls.primary_color
-									on_press: root.control("next")
+									on_press: root.control('next')
 
 
 
@@ -212,8 +222,8 @@ MainThread:
 
 						MDLabel:
 							id: songpos
-							text: "0:00"
-							halign: "center"
+							text: '0:00'
+							halign: 'center'
 							size_hint: 0.06,1
 							theme_text_color: 'Custom'
 							text_color: app.theme_cls.primary_color
@@ -229,8 +239,8 @@ MainThread:
 							size_hint: 0.06,1
 							theme_text_color: 'Custom'
 							text_color: app.theme_cls.primary_color
-							text: "--:--"
-							halign: "center"
+							text: '--:--'
+							halign: 'center'
 							font_size: songlength.height/2.5
 
 
@@ -354,24 +364,24 @@ MainThread:
 					size_hint: 0.25,1
 					pos_hint: {'x': 0, 'y':0}
 					on_release:
-						root.slide_screen(self.name,"music")
+						root.slide_screen(self.name,'music')
 
 					MDIconButton: #Music button
 						id: music
 						icon: 'music-note'
 						size_hint: 1, .4
 						user_font_size: self.y*2
-						theme_text_color: "Custom"
+						theme_text_color: 'Custom'
 						text_color: app.theme_cls.accent_color
 						on_release:
-							root.slide_screen('1',"music")
+							root.slide_screen('1','music')
 
 					MDLabel:
 						size_hint: 1, 0.2
 						id: musiclabel
 						font_style: 'H6'
-						halign: "center"
-						text: "Music"
+						halign: 'center'
+						text: 'Music'
 						color: app.theme_cls.accent_color
 
 				IconButton:
@@ -381,24 +391,24 @@ MainThread:
 					size_hint: 0.25,1
 					pos_hint: {'x': 0.25, 'y':0}
 					on_release:
-						root.slide_screen(self.name,"obd")
+						root.slide_screen(self.name,'obd')
 
 					MDIconButton: #OBDII button
 						id: obd
 						icon: 'car-cruise-control'
 						size_hint: 1, .4
 						user_font_size: self.y*2
-						theme_text_color: "Custom"
+						theme_text_color: 'Custom'
 						text_color: app.theme_cls.primary_color
 						on_release:
-							root.slide_screen('2',"obd")
+							root.slide_screen('2','obd')
 
 					MDLabel:
 						size_hint: 1, 0.2
 						id: obdlabel
 						font_style: 'H6'
-						halign: "center"
-						text: "OBD2"
+						halign: 'center'
+						text: 'OBD2'
 						color: app.theme_cls.primary_color
 
 				IconButton:
@@ -408,24 +418,24 @@ MainThread:
 					size_hint: 0.25,1
 					pos_hint: {'x': 0.5, 'y':0}
 					on_release:
-						root.slide_screen(self.name,"perf")
+						root.slide_screen(self.name,'perf')
 
 					MDIconButton: #PerfScreen
 						id: perf
 						icon: 'tune'
 						size_hint: 1, .4
 						user_font_size: self.y*2
-						theme_text_color: "Custom"
+						theme_text_color: 'Custom'
 						text_color: app.theme_cls.primary_color
 						on_release:
-							root.slide_screen('3',"perf")
+							root.slide_screen('3','Perf')
 
 					MDLabel:
 						size_hint: 1, 0.2
 						id: perflabel
 						font_style: 'H6'
-						halign: "center"
-						text: "Performance"
+						halign: 'center'
+						text: 'Performance'
 						color: app.theme_cls.primary_color
 
 				IconButton:
@@ -435,31 +445,31 @@ MainThread:
 					size_hint: 0.25,1
 					pos_hint: {'x': 0.75, 'y':0}
 					on_release:
-						root.slide_screen(self.name,"settings")
+						root.slide_screen(self.name,'settings')
 
 					MDIconButton:  #settings button
 						id: settings
 						icon: 'settings'
 						size_hint: 1, .4
 						user_font_size: self.y*2
-						theme_text_color: "Custom"
+						theme_text_color: 'Custom'
 						text_color: app.theme_cls.primary_color
 						on_release:
-							root.slide_screen('4',"settings")
+							root.slide_screen('4','settings')
 
 					MDLabel:
 						size_hint: 1, 0.2
 						id: settingslabel
 						font_style: 'H6'
-						halign: "center"
-						text: "Settings"
+						halign: 'center'
+						text: 'Settings'
 						color: app.theme_cls.primary_color
 
 
 	VolumeSlider:
 		id: volumecontrol
 		size_hint: .04 , 0.78
-		pos_hint: {"x": 0.96, 'y':0.2}
+		pos_hint: {'x': 0.96, 'y':0.2}
 		orientation: 'vertical'
 
 		MDSlider:
@@ -473,6 +483,17 @@ MainThread:
 
 	VoiceRecognizer:
 		id: voicecontrol
-		size_hint: 0.2,0.07
+		size_hint: 0.045,0.07
 		pos_hint: {'center_x': 0.5,'y':0.93}
-		Button:
+		canvas:
+			Color:
+				rgba: .9, .9, .9, .1
+			RoundedRectangle:
+				pos: self.pos
+				size: self.size
+				radius: 100,100,100,100
+		halign: 'center'
+		icon: 'microphone'
+		theme_text_color: 'Custom'
+		text_color: app.theme_cls.primary_color
+		on_release: root.show_voice()

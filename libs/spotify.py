@@ -53,12 +53,12 @@ def reauth():
 def get_playing():
 	song = {}
 	try:
-		playing = sp.currently_playing(additional_types='episode')
+		playing = sp.current_playback(additional_types='episode')
 
 	except spotipy.client.SpotifyException:
 		print('(spotify.py) re-authenticating')
 		auth = reauth()
-		playing = auth.currently_playing(additional_types='episode')
+		playing = auth.current_playback(additional_types='episode')
 
 	if not playing:
 		print("(spotify.py) nothing playing")
@@ -81,7 +81,8 @@ def get_playing():
 			song['type'] = "song"
 			song['position'] = playing['progress_ms']
 			song['duration'] = playing['item']['duration_ms']
-
+			song['is_playing'] = playing['is_playing']
+			song['shuffle_state'] = playing ['shuffle_state']
 	elif sp.is_token_expired(token):
 		reauth()
 	return (song)
@@ -93,24 +94,21 @@ def search(search_terms):
 def set_volume(percent):
 	sp.volume(percent)
 
-def get_state(function):
-	playing = sp.current_playback()
-	if function == 'is_playing':
-		return playing['is_playing']
-	if function == 'toggling_shuffle':
-		return playing['shuffle_state']
+
 
 def control(command):
-	print("(Spotify.py) sending {} command".format(command))
-	if command == 'next':
-		sp.next_track()
-	elif command == 'previous':
-		sp.previous_track()
-	elif command == 'play':
-		sp.start_playback()
-	elif command == 'pause':
-		sp.pause_playback()
-	elif command == 'shuffle_on':
-		sp.shuffle(True)
-	elif command == 'shuffle_off':
-		sp.shuffle(False)
+	try:
+		if command == 'next':
+			sp.next_track()
+		elif command == 'previous':
+			sp.previous_track()
+		elif command == 'play':
+			sp.start_playback()
+		elif command == 'pause':
+			sp.pause_playback()
+		elif command == 'shuffle_on':
+			sp.shuffle(True)
+		elif command == 'shuffle_off':
+			sp.shuffle(False)
+	except spotipy.exceptions.SpotifyException as e:
+		print(e)
