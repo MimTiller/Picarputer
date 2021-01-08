@@ -11,3 +11,5 @@ futures
 kivy
 kivy-garden
 kivy_garden.graph
+kivymd
+pyusb
