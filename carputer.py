@@ -69,20 +69,20 @@ from kivy.uix.screenmanager import ScreenManager, Screen, NoTransition, SlideTra
 from kivy.utils import get_color_from_hex as rgb
 from kivy.graphics import *
 from kivy.graphics.vertex_instructions import RoundedRectangle
-
+from kivy.event import EventDispatcher
 #non kivy imports
 from time import time
 from random import shuffle
 from multiprocessing import Process
 import re, sys, os, random, threading, time, eyed3, mutagen, glob
 import dataset, usb, psutil, importlib, json, concurrent.futures
-from libs import tagger, audio, vlc, btdevices, initialize, settings, spotify, speech
+from libs import tagger, audio, vlc, btdevices, initialize, settings, spotify, speech,source_control
 from libs.settings import SettingSlider, MySettings
 from threading import Thread
 from collections import defaultdict
 from os import path
 from functools import partial
-import urllib
+
 import asyncio
 import speech_recognition as sr
 #==================CONFIGURATION========================================#
@@ -111,10 +111,10 @@ class ScreenManagement(ScreenManager):
     pass
 class Menu(AnchorLayout):
 	pass
-class MusicScreen(MDScreen):
+class MusicScreen(MDScreen,EventDispatcher):
 	pass
 class SettingsScreen(MDScreen):
-    pass
+	pass
 class OBDIIScreen(MDScreen):
 	pass
 class PerfScreen(MDScreen):
@@ -125,21 +125,10 @@ class VolumeSlider(AnchorLayout):
 	pass
 class Source(MDDropDownItem):
 	pass
-class PlayButtons(BoxLayout):
-	pass
-class Scroller1(FloatLayout):
-	pass
-class Scroller2(FloatLayout):
-	pass
-class BigScreenInfo(BoxLayout):
-	pass
 class Notify(FloatLayout):
 	pass
-
 class DynamicLabel(MDLabel):
 	multiplier = NumericProperty(1)
-
-
 
 class IconSizer(MDIconButton):
 	multiplier = NumericProperty(1)
@@ -163,11 +152,10 @@ class WallPaper(Image):
 
 #-----------------------MAIN-FUNCTIONS---------------------------------#
 class MainThread(FloatLayout):
-	instance = vlc.Instance()
-	player = instance.media_player_new('C:/test.wav')
-	media = instance.media_new_path('unknown')
-	player.set_media(media)
-	player = vlc.MediaPlayer('/path/to/file.flac')
+	title = StringProperty('')
+	artist = StringProperty('')
+	album = StringProperty('')
+	albumart = StringProperty('')
 
 	def __init__(self, **kwargs):
 		super(MainThread ,self).__init__(**kwargs)
@@ -176,21 +164,17 @@ class MainThread(FloatLayout):
 		Clock.schedule_interval(self.songinfoupdate, musicupdatetime)
 		Clock.schedule_once(partial(self.start_threads,targets=self.threads),1)
 		Window.bind(on_resize=self.on_window_resize)
-
 		self.font_scaling = NumericProperty()
-		self.num = 0
-		self.shuffle = True
-		self.artist = ''
-		self.album = ''
-		self.title = ''
-		self.image = ''
+		self.wallpaperlist = ListProperty()
+
 		self.is_playing = False
 		self.shuffle_state = False
 		self.source_pass = False
-		self.wallpaperlist = ListProperty()
 		self.currentscreen = 1
 		self.source = App.get_running_app().config.get('Default','audio_source')
 	#cosmetic functions
+
+	#kivy callback, called everytime the window size changes
 	def on_window_resize(self,window,width,height):
 		self.icon_font_update()
 
@@ -264,6 +248,8 @@ class MainThread(FloatLayout):
 			pass
 		self.ids.st.current = screenname
 
+
+	#sets the current audio source
 	def set_source(self,button):
 		source_names = {'spotify':'Spotify','usb':'USB','video-input-component':'Aux','bluetooth':'Bluetooth'}
 		self.source = button.icon
@@ -272,12 +258,13 @@ class MainThread(FloatLayout):
 		self.remove_widget(button.parent)
 		self.source_pass = False
 
+	#called when the source button is clicked
 	def select_source(self,source):
 		if self.source_pass == True:
 			pass
 		else:
 			source_icons = ['spotify','usb','video-input-component','bluetooth']
-			b = BoxLayout(orientation='vertical',size_hint=(0.01,0.03),x=source.x,y=source.y-(source.height*len(source_icons)))
+			b = BoxLayout(orientation='vertical',size_hint=(0.01,0.04),x=source.x,y=source.y-(source.height*len(source_icons)))
 
 			for icon in source_icons:
 				m = MDIconButton(icon=icon,theme_text_color='Custom',text_color=CarputerApp().theme_cls.primary_color)
@@ -289,24 +276,10 @@ class MainThread(FloatLayout):
 			self.add_widget(b)
 			self.source_pass = True
 
-	#control functions:
+	#playback control functions:
 	def control(self,control_msg):
 		#get current source:
-		if self.source == 'Spotify':
-			if control_msg == 'playpause':
-				if self.is_playing == True:
-					control_msg = 'pause'
-				else:
-					control_msg = 'play'
-			if control_msg == 'shuffle':
-				if self.shuffle_state == True:
-					control_msg = 'shuffle_off'
-				else:
-					control_msg = 'shuffle_on'
-			print("(Spotify.py) sending {} command".format(control_msg))
-			spotify.control(control_msg)
-
-
+		source_control.control_playback(control_msg,self.source)
 
 
 	#refreshers
@@ -327,9 +300,13 @@ class MainThread(FloatLayout):
 			#self.ids.shuffle.text_color = CarputerApp().theme_cls.accent_color
 		#else:
 			#self.ids.shuffle.text_color = CarputerApp().theme_cls.primary_color
-	#initialization
-	def volslider(self, value):
-		self.player.audio_set_volume(int(value))
+
+
+
+	#initialization (called on startup)
+	def set_volume(self, value):
+		self.source = source
+		source_control.control_playback(value,self.source)
 
 	def volstartup(self):
 		try:
@@ -340,14 +317,14 @@ class MainThread(FloatLayout):
 		#self.player.audio_set_volume(float(volume))
 		return int(float(volume))
 
+
 	oldtrack = ''
-
-
-
 	#display all the song info on the music screen
 	def songinfoupdate(self,dt):
 		try:
-			track = spotify.get_playing()
+			#send source to source_control.py and return a dict to pull track info from
+			track = source_control.get_track_info(self.source)
+			self.albumart = source_control.get_album_art(self.source,track)
 			self.is_playing = track['is_playing']
 			self.shuffle_state = track['shuffle_state']
 			if not track['position']:
@@ -358,35 +335,17 @@ class MainThread(FloatLayout):
 				pass
 			else:
 				print('(main.py) new track')
-				if track['type'] == 'podcast':
-					artist = track['artist']
-					title = track['track']
-					art = track['art']
-					print('(main.py) {} : {}'.format(artist,title))
-					albumart = urllib.request.urlretrieve(art,'temp.png')
-					self.ids.bigscreenartist.text = artist
-					self.ids.bigscreentitle.text = title
-					self.ids.bigscreenalbum.text = ''
-					self.album_art.source='temp.png'
-					self.album_art.reload()
-					self.oldtrack = track['track']
-
-				elif track['type'] == 'song':
-
-					artist = track['artist']
-					album = track['album']
-					title = track['track']
-					art = track['art']
-					print('(main.py) {} : {} : {}'.format(artist,album,title))
-					albumart = urllib.request.urlretrieve(art,'temp.png')
-					#update bigscreen info
-					self.ids.bigscreenartist.text = artist
-					self.ids.bigscreentitle.text = title
-					self.ids.bigscreenalbum.text = album
-					self.album_art.source='temp.png'
-					self.album_art.reload()
-					self.oldtrack = track['track']
-
+				artist = track['artist']
+				album = track['album']
+				title = track['track']
+				art = track['art']
+				print('(main.py) {} : {} : {}'.format(artist,album,title))
+				#update bigscreen info
+				self.artist = artist
+				self.title = title
+				self.album = album
+				self.ids.album_art.reload()
+				self.oldtrack = track['track']
 			#change time from seconds to minutes and seconds
 			m, s = divmod(pos, 60)
 			if s < 10:

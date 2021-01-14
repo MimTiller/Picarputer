@@ -67,6 +67,7 @@ def get_playing():
 		if playing['currently_playing_type'] == 'episode':
 			print("its a podcast!")
 			song['artist'] = playing['item']['show']['name']
+			song['album'] = ''
 			song['track'] = playing['item']['name']
 			song['art'] = playing['item']['images'][0]['url']
 			song['type'] = "podcast"
@@ -83,18 +84,11 @@ def get_playing():
 			song['duration'] = playing['item']['duration_ms']
 			song['is_playing'] = playing['is_playing']
 			song['shuffle_state'] = playing ['shuffle_state']
-	elif sp.is_token_expired(token):
-		reauth()
 	return (song)
 
 def search(search_terms):
 	search = sp.search(search_terms,type='track,artist',limit=1)
 	return(search)
-
-def set_volume(percent):
-	sp.volume(percent)
-
-
 
 def control(command):
 	try:
@@ -110,5 +104,7 @@ def control(command):
 			sp.shuffle(True)
 		elif command == 'shuffle_off':
 			sp.shuffle(False)
+		if isinstance(command,int):
+			sp.volume(command)
 	except spotipy.exceptions.SpotifyException as e:
 		print(e)
