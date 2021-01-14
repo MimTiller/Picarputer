@@ -12,7 +12,7 @@ import time
 global sp
 SPOTIPY_CLIENT_ID="c04a53506ea54cc3b46cb7fdf0deffde"
 SPOTIPY_CLIENT_SECRET= "404d47507d8c4c899a1fee325dd17a61"
-scope = 'user-read-private user-read-playback-state user-modify-playback-state'
+scope = 'user-read-private user-read-playback-state user-modify-playback-state '
 username='subcake'
 
 def session_cache():
@@ -23,7 +23,7 @@ def session_cache():
 
 auth = spotipy.oauth2.SpotifyOAuth(client_id=SPOTIPY_CLIENT_ID,client_secret=SPOTIPY_CLIENT_SECRET,redirect_uri="https://google.com",cache_path=session_cache())
 try:
-    #token = util.prompt_for_user_token(username, scope,client_id=SPOTIPY_CLIENT_ID,client_secret=SPOTIPY_CLIENT_SECRET,redirect_uri="https://google.com",cache_path=session_cache())
+    token = util.prompt_for_user_token(username, scope,client_id=SPOTIPY_CLIENT_ID,client_secret=SPOTIPY_CLIENT_SECRET,redirect_uri="https://google.com",cache_path=session_cache())
 	pass
 except (AttributeError, JSONDecodeError) as e:
 	print(e)
@@ -34,15 +34,18 @@ print("(spotify.py): Logging in...")
 sp = spotipy.Spotify(auth_manager=auth)
 user = sp.me()['id']
 print("(spotify.py) logged in as {}".format(user))
-devices = sp.devices()
-#print(json.dumps(devices, sort_keys=True, indent=4))
-deviceID = devices['devices'][0]['id']
+try:
+	devices = sp.devices()
+	#print(json.dumps(devices, sort_keys=True, indent=4))
+	deviceID = devices['devices'][0]['id']
 
 
-device_list = []
-for x in devices['devices']:
-	device_list.append(x['name'])
-print ("(spotify.py) Usable Devices: {}".format(device_list))
+	device_list = []
+	for x in devices['devices']:
+		device_list.append(x['name'])
+	print ("(spotify.py) Usable Devices: {}".format(device_list))
+except spotify.exceptions.SpotifyException as e:
+	print(e)
 
 
 def reauth():

@@ -1,4 +1,3 @@
-cython==0.21.2
 setuptools
 docutils
 pygments
@@ -11,3 +10,12 @@ futures
 kivy
 kivy-garden
 kivy_garden.graph
+kivymd
+psutil
+pybluez
+pygame
+sounddevice
+spotipy
+speechrecognition
+pyaudio
+#ubuntu: need to install libbluetooth-dev
