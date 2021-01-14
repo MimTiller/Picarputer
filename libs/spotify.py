@@ -24,7 +24,6 @@ def session_cache():
 auth = spotipy.oauth2.SpotifyOAuth(client_id=SPOTIPY_CLIENT_ID,client_secret=SPOTIPY_CLIENT_SECRET,redirect_uri="https://google.com",cache_path=session_cache())
 try:
     token = util.prompt_for_user_token(username, scope,client_id=SPOTIPY_CLIENT_ID,client_secret=SPOTIPY_CLIENT_SECRET,redirect_uri="https://google.com",cache_path=session_cache())
-	pass
 except (AttributeError, JSONDecodeError) as e:
 	print(e)
 	os.remove(f".cache-{username}")
