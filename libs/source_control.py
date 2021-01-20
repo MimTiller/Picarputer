@@ -34,5 +34,8 @@ def get_track_info(source):
 def get_album_art(source,track):
 	if source == 'Spotify':
 		art = track['art']
-		albumart = urllib.request.urlretrieve(art,'temp.png')
-		return 'temp.png'
+		if art != None:
+			albumart = urllib.request.urlretrieve(art,'temp.png')
+			return 'temp.png'
+		else:
+			return 'unknown.png'

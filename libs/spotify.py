@@ -6,66 +6,51 @@ import webbrowser
 import spotipy.util as util
 from json.decoder import JSONDecodeError
 import time
+from spotipy.oauth2 import SpotifyOAuth
 
 
-
-global sp
 SPOTIPY_CLIENT_ID="c04a53506ea54cc3b46cb7fdf0deffde"
 SPOTIPY_CLIENT_SECRET= "404d47507d8c4c899a1fee325dd17a61"
-scope = 'user-read-private user-read-playback-state user-modify-playback-state '
+scope = 'user-read-private user-read-playback-state user-modify-playback-state user-read-recently-played user-read-currently-playing'
 username='subcake'
+redirect = 'http://example.com'
 
 def session_cache():
 	cache_file = os.getcwd()+"\\.cache-{}".format(username)
-	print(cache_file)
 	return(cache_file)
 
+def login():
+	global sp
+	global token
+	try:
+		auth_manager=SpotifyOAuth(username=username,client_id=SPOTIPY_CLIENT_ID,client_secret=SPOTIPY_CLIENT_SECRET,redirect_uri=redirect)
+		sp = spotipy.Spotify(auth_manager=auth_manager)
 
-auth = spotipy.oauth2.SpotifyOAuth(client_id=SPOTIPY_CLIENT_ID,client_secret=SPOTIPY_CLIENT_SECRET,redirect_uri="https://google.com",cache_path=session_cache())
-try:
-    token = util.prompt_for_user_token(username, scope,client_id=SPOTIPY_CLIENT_ID,client_secret=SPOTIPY_CLIENT_SECRET,redirect_uri="https://google.com",cache_path=session_cache())
-except (AttributeError, JSONDecodeError) as e:
-	print(e)
-	os.remove(f".cache-{username}")
-	token = util.prompt_for_user_token(username, scope)
+		print("(spotify.py): Logging in...")
+		user = sp.me()['id']
+		print("(spotify.py) logged in as {}".format(user))
 
-print("(spotify.py): Logging in...")
-sp = spotipy.Spotify(auth_manager=auth)
-user = sp.me()['id']
-print("(spotify.py) logged in as {}".format(user))
-try:
-	devices = sp.devices()
-	#print(json.dumps(devices, sort_keys=True, indent=4))
-	deviceID = devices['devices'][0]['id']
-
-
-	device_list = []
-	for x in devices['devices']:
-		device_list.append(x['name'])
-	print ("(spotify.py) Usable Devices: {}".format(device_list))
-except spotify.exceptions.SpotifyException as e:
-	print(e)
-
+	except Exception as e:
+		print("spotify exception:")
+		print(e)
 
 def reauth():
-	sp = spotipy.Spotify(auth_manager=auth)
+	global sp
+	cache_handler = spotipy.cache_handler.CacheFileHandler(cache_path=session_cache())
+	auth_manager = spotipy.oauth2.SpotifyOAuth(cache_handler=cache_handler)
+	sp = spotipy.Spotify(auth_manager=auth_manager)
 	print('(spotify.py) finished re-authenticating',sp)
 	return(sp)
 
 def get_playing():
+	global sp
 	song = {}
+	cache_handler = spotipy.cache_handler.CacheFileHandler(cache_path=session_cache())
+	auth_manager = spotipy.oauth2.SpotifyOAuth(cache_handler=cache_handler)
+	if not auth_manager.validate_token(cache_handler.get_cached_token()):
+		sp = spotipy.Spotify(auth_manager=auth_manager)
 	try:
-		playing = sp.current_playback(additional_types='episode')
-
-	except spotipy.client.SpotifyException:
-		print('(spotify.py) re-authenticating')
-		auth = reauth()
-		playing = auth.current_playback(additional_types='episode')
-
-	if not playing:
-		print("(spotify.py) nothing playing")
-		pass
-	if playing != None:
+		playing = sp.current_playback()
 		if playing['currently_playing_type'] == 'episode':
 			print("its a podcast!")
 			song['artist'] = playing['item']['show']['name']
@@ -86,13 +71,26 @@ def get_playing():
 			song['duration'] = playing['item']['duration_ms']
 			song['is_playing'] = playing['is_playing']
 			song['shuffle_state'] = playing ['shuffle_state']
-	return (song)
+		return (song)
+	except Exception as e:
+		print("spotify Exception")
+		print(e)
+
+
+
+
+		#print('(spotify.py) re-authenticating')
+		#auth = reauth()
+		#playing = sp.current_playback(additional_types='episode')
+
 
 def search(search_terms):
+	global sp
 	search = sp.search(search_terms,type='track,artist',limit=1)
 	return(search)
 
 def control(command):
+	global sp
 	try:
 		if command == 'next':
 			sp.next_track()
@@ -110,3 +108,4 @@ def control(command):
 			sp.volume(command)
 	except spotipy.exceptions.SpotifyException as e:
 		print(e)
+login()

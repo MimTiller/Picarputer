@@ -76,8 +76,9 @@ from random import shuffle
 from multiprocessing import Process
 import re, sys, os, random, threading, time, eyed3, mutagen, glob
 import dataset, usb, psutil, importlib, json, concurrent.futures
-from libs import tagger, audio, vlc, btdevices, initialize, settings, spotify, speech,source_control
+from libs import tagger, audio, vlc, btdevices, initialize, settings, speech,source_control
 from libs.settings import SettingSlider, MySettings
+#from libs.spotify import spotify_control as spotify
 from threading import Thread
 from collections import defaultdict
 from os import path
@@ -160,9 +161,9 @@ class MainThread(FloatLayout):
 	def __init__(self, **kwargs):
 		super(MainThread ,self).__init__(**kwargs)
 		self.threads = [self.perf_graph]
-		Clock.schedule_interval(self.refresh, screenupdatetime)
-		Clock.schedule_interval(self.songinfoupdate, musicupdatetime)
 		Clock.schedule_once(partial(self.start_threads,targets=self.threads),1)
+		Clock.schedule_interval(self.refresh, screenupdatetime)
+		Clock.schedule_once(self.start_song_update,3)
 		Window.bind(on_resize=self.on_window_resize)
 		self.font_scaling = NumericProperty()
 		self.wallpaperlist = ListProperty()
@@ -172,6 +173,9 @@ class MainThread(FloatLayout):
 		self.source_pass = False
 		self.currentscreen = 1
 		self.source = App.get_running_app().config.get('Default','audio_source')
+
+	def start_song_update(self,dt):
+		Clock.schedule_interval(self.songinfoupdate, musicupdatetime)
 	#cosmetic functions
 
 	#kivy callback, called everytime the window size changes
@@ -252,7 +256,7 @@ class MainThread(FloatLayout):
 	#sets the current audio source
 	def set_source(self,button):
 		source_names = {'spotify':'Spotify','usb':'USB','video-input-component':'Aux','bluetooth':'Bluetooth'}
-		self.source = button.icon
+		self.source = source_names[button.icon]
 		self.ids.source_button.icon = button.icon
 		self.ids.source_label.text = source_names[button.icon]
 		self.remove_widget(button.parent)
@@ -321,51 +325,54 @@ class MainThread(FloatLayout):
 	oldtrack = ''
 	#display all the song info on the music screen
 	def songinfoupdate(self,dt):
-		try:
-			#send source to source_control.py and return a dict to pull track info from
-			track = source_control.get_track_info(self.source)
-			self.albumart = source_control.get_album_art(self.source,track)
-			self.is_playing = track['is_playing']
-			self.shuffle_state = track['shuffle_state']
-			if not track['position']:
-				print('Not playing currently')
-			pos = int(track['position']/1000)
-			dur = int(track['duration']/1000)
-			if track['track'] == self.oldtrack:
-				pass
-			else:
-				print('(main.py) new track')
-				artist = track['artist']
-				album = track['album']
-				title = track['track']
-				art = track['art']
-				print('(main.py) {} : {} : {}'.format(artist,album,title))
-				#update bigscreen info
-				self.artist = artist
-				self.title = title
-				self.album = album
-				self.ids.album_art.reload()
-				self.oldtrack = track['track']
-			#change time from seconds to minutes and seconds
-			m, s = divmod(pos, 60)
-			if s < 10:
-				s = '%02d' %s
-			#update song position text
+		#send source to source_control.py and return a dict to pull track info from
+		track = source_control.get_track_info(self.source)
+		if track == None:
+			pass
+		else:
 			try:
-				self.ids.songpos.text = '{0}:{1}'.format(m, s)
-				m, s = divmod(dur, 60)
+				self.albumart = source_control.get_album_art(self.source,track)
+				self.is_playing = track['is_playing']
+				self.shuffle_state = track['shuffle_state']
+				if not track['position']:
+					print('Not playing currently')
+				pos = int(track['position']/1000)
+				dur = int(track['duration']/1000)
+				if track['track'] == self.oldtrack:
+					pass
+				else:
+					print('(main.py) new track')
+					artist = track['artist']
+					album = track['album']
+					title = track['track']
+					art = track['art']
+					print('(main.py) {} : {} : {}'.format(artist,album,title))
+					#update bigscreen info
+					self.artist = artist
+					self.title = title
+					self.album = album
+					self.ids.album_art.reload()
+					self.oldtrack = track['track']
+				#change time from seconds to minutes and seconds
+				m, s = divmod(pos, 60)
 				if s < 10:
 					s = '%02d' %s
-				#update remaining time left on song and slider
-				self.ids.songlength.text = '{0}:{1}'.format(m, s)
-				self.slider.max = dur
-				self.slider.value = pos
+				#update song position text
+				try:
+					self.ids.songpos.text = '{0}:{1}'.format(m, s)
+					m, s = divmod(dur, 60)
+					if s < 10:
+						s = '%02d' %s
+					#update remaining time left on song and slider
+					self.ids.songlength.text = '{0}:{1}'.format(m, s)
+					self.slider.max = dur
+					self.slider.value = pos
+				except Exception as e:
+					print('(songinfoupdate) failed to update time')
+					print(e)
 			except Exception as e:
-				print('(songinfoupdate) failed to update time')
 				print(e)
-		except Exception as e:
-			print('(songinfoupdate) failed to fetch info!')
-			print(e)
+
 
 
 	def perf_counter(self):
