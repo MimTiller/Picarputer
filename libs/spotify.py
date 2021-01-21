@@ -36,21 +36,34 @@ def login():
 
 def reauth():
 	global sp
-	cache_handler = spotipy.cache_handler.CacheFileHandler(cache_path=session_cache())
-	auth_manager = spotipy.oauth2.SpotifyOAuth(cache_handler=cache_handler)
-	sp = spotipy.Spotify(auth_manager=auth_manager)
-	print('(spotify.py) finished re-authenticating',sp)
-	return(sp)
+	global token
+	try:
+		auth_manager=SpotifyOAuth(username=username,client_id=SPOTIPY_CLIENT_ID,client_secret=SPOTIPY_CLIENT_SECRET,redirect_uri=redirect)
+		sp = spotipy.Spotify(auth_manager=auth_manager)
 
+		print("(spotify.py): Logging in...")
+		user = sp.me()['id']
+		print("(spotify.py) logged in as {}".format(user))
+		return(sp)
+	except Exception as e:
+		print("spotify exception:")
+		print(e)
 def get_playing():
 	global sp
 	song = {}
 	cache_handler = spotipy.cache_handler.CacheFileHandler(cache_path=session_cache())
 	auth_manager = spotipy.oauth2.SpotifyOAuth(cache_handler=cache_handler)
 	if not auth_manager.validate_token(cache_handler.get_cached_token()):
-		sp = spotipy.Spotify(auth_manager=auth_manager)
+		print("token not validated! trying to reauthenticate")
+		sp = reauth()
+
 	try:
 		playing = sp.current_playback()
+
+		if playing == None:
+			print("get_playing: couldnt find current_playback(), trying current_user_playing_track()")
+			playing = sp.current_user_playing_track()
+		print("get_playing:",playing)
 		if playing['currently_playing_type'] == 'episode':
 			print("its a podcast!")
 			song['artist'] = playing['item']['show']['name']
@@ -75,8 +88,8 @@ def get_playing():
 	except Exception as e:
 		print("spotify Exception")
 		print(e)
-
-
+		sp = reauth()
+		pass
 
 
 		#print('(spotify.py) re-authenticating')

@@ -10,7 +10,8 @@ from kivy_garden.graph import MeshLinePlot, SmoothLinePlot
 from kivy.storage.jsonstore import JsonStore
 from kivy.uix.settings import SettingsWithNoMenu, SettingOptions, SettingsWithSidebar, SettingItem
 from kivy.metrics import dp
-
+from kivy.base import EventLoop
+EventLoop.ensure_window()
 #layouts
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
@@ -167,7 +168,6 @@ class MainThread(FloatLayout):
 		Window.bind(on_resize=self.on_window_resize)
 		self.font_scaling = NumericProperty()
 		self.wallpaperlist = ListProperty()
-
 		self.is_playing = False
 		self.shuffle_state = False
 		self.source_pass = False
