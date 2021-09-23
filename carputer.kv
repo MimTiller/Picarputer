@@ -51,7 +51,7 @@ MainThread:
 	ramgraph:ramgraph
 
 	#layout
-	AnchorLayout:
+	FloatLayout:
 		anchor_x: 'center'
 		anchor_y: 'center'
 
@@ -71,16 +71,14 @@ MainThread:
 		ScreenManagement:
 			transition: SlideTransition()
 			id: st
-			size_hint: 1, 1
+			size_hint: 1, 0.77
+			pos_hint:{'x':0,'y':0.13}
 
 			MusicScreen:
 				name: 'music'
 				id: musicscrn
 				BoxLayout:
 					orientation: 'vertical'
-					size_hint: 1, 0.8
-					pos_hint:{'x':0,'y':0.15}
-
 					BoxLayout:
 						orientation: 'horizontal'
 						size_hint_x: 0.97
@@ -99,32 +97,33 @@ MainThread:
 								size_hint: 1,0.2
 								Label:
 									size_hint: 0.9,1
+
+								#current audio source
 								BoxLayout:
 									orientation:'vertical'
-									size_hint: 0.1,1
+									size_hint: 0.08,1
+									canvas:
+										Color:
+											rgba: .9, .9, .9, .1
+										RoundedRectangle:
+											pos: self.pos
+											size: self.size
 									DynamicLabel:
 										id: source_label
-										multiplier: 0.22
+										multiplier: 0.18
 										text_size: self.width , None
 										text: root.source
 										theme_text_color: 'Custom'
 										text_color: app.theme_cls.primary_color
 										halign: 'center'
-										size_hint: 1,0.3
+
 									MDIconButton:
-										canvas:
-											Color:
-												rgba: .9, .9, .9, .1
-											RoundedRectangle:
-												pos: self.pos
-												size: self.size
-												radius: 100,100,100,100
 										id: source_button
 										icon: root.source.lower()
 										theme_text_color: 'Custom'
 										text_color: app.theme_cls.primary_color
 										on_release: root.select_source(self)
-										size_hint: 1,0.3
+
 
 
 
@@ -132,7 +131,7 @@ MainThread:
 							#track name, artist, album
 							DynamicLabel:
 								id: bigscreenartist
-								multiplier: 0.3
+								multiplier: 0.4
 								text_size: self.width , None
 								size_hint: 1,0.1
 								valign: 'bottom'
@@ -252,36 +251,63 @@ MainThread:
 
 			OBDIIScreen:
 				name: 'obd'
+				BoxLayout:
+					BoxLayout:
+						size_hint: 0.5,0.5
+						AKCircularProgress:
+							id: RPM
+							start_deg: -90
+							end_deg: 90
+					BoxLayout:
+						size_hint: 0.5,0.5
+						AKCircularProgress:
+							id: ENGINE_LOAD
+							start_deg: -90
+							end_deg: 90
 
+					BoxLayout:
+						size_hint: 0.5,0.5
+						AKCircularProgress:
+							id: three
+							start_deg: -90
+							end_deg: 90
+							percent_type: 'relative'
+					BoxLayout:
+						size_hint: 0.5,0.5
+						AKCircularProgress:
+							id: four
+							start_deg: -90
+							end_deg: 90
 
 
 			PerfScreen:
 				name: 'perf'
 
 				BoxLayout:
-					size_hint: 0.95, 1
+					size_hint: 0.95, 0.9
+					pos_hint: {'x':0,'y':0.1}
 					orientation: 'vertical'
-
+					canvas.before:
+						Color:
+							rgba: 0.3,0.3,0.3,0.7
+						RoundedRectangle:
+							pos: self.pos
+							size: self.size
 					BoxLayout:
-
 						Graph:
-							size_hint: 0.24, 1
+							size_hint: 0.22, 0.9
 							id: cpugraph
-
 						Graph:
-							size_hint: 0.24, 1
+							size_hint: 0.22, 0.9
 							id: ramgraph
-
 						Graph:
-							size_hint: 0.24, 1
+							size_hint: 0.22, 0.9
 							id: netupgraph
-
 						Graph:
-							size_hint: 0.24, 1
+							size_hint: 0.22, 0.9
 							id: netdowngraph
 
 					BoxLayout:
-
 						Button:
 							id: CPU
 							size_hint: 0.22, 1
@@ -483,7 +509,7 @@ MainThread:
 	VoiceRecognizer:
 		id: voicecontrol
 		size_hint: 0.045,0.07
-		pos_hint: {'center_x': 0.5,'y':0.93}
+		pos_hint: {'center_x': 0.5,'y':0.9}
 		canvas:
 			Color:
 				rgba: .9, .9, .9, .1

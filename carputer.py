@@ -11,7 +11,6 @@ from kivy.storage.jsonstore import JsonStore
 from kivy.uix.settings import SettingsWithNoMenu, SettingOptions, SettingsWithSidebar, SettingItem
 from kivy.metrics import dp
 from kivy.base import EventLoop
-EventLoop.ensure_window()
 #layouts
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
@@ -73,18 +72,19 @@ from kivy.graphics.vertex_instructions import RoundedRectangle
 from kivy.event import EventDispatcher
 #non kivy imports
 from time import time
-from random import shuffle
+import random
 from multiprocessing import Process
 import re, sys, os, random, threading, time, eyed3, mutagen, glob
 import dataset, usb, psutil, importlib, json, concurrent.futures
-from libs import tagger, audio, vlc, btdevices, initialize, settings, speech,source_control
+from libs import tagger, audio, btdevices, initialize, settings, speech,source_control
 from libs.settings import SettingSlider, MySettings
+from libs.progresswidget import AKCircularProgress
+from libs.spotify import Spotify_ctrl
 #from libs.spotify import spotify_control as spotify
 from threading import Thread
 from collections import defaultdict
 from os import path
 from functools import partial
-
 import asyncio
 import speech_recognition as sr
 #==================CONFIGURATION========================================#
@@ -164,7 +164,7 @@ class MainThread(FloatLayout):
 		self.threads = [self.perf_graph]
 		Clock.schedule_once(partial(self.start_threads,targets=self.threads),1)
 		Clock.schedule_interval(self.refresh, screenupdatetime)
-		Clock.schedule_once(self.start_song_update,3)
+		Clock.schedule_once(self.start_song_update,7)
 		Window.bind(on_resize=self.on_window_resize)
 		self.font_scaling = NumericProperty()
 		self.wallpaperlist = ListProperty()
@@ -175,7 +175,10 @@ class MainThread(FloatLayout):
 		self.source = App.get_running_app().config.get('Default','audio_source')
 
 	def start_song_update(self,dt):
-		Clock.schedule_interval(self.songinfoupdate, musicupdatetime)
+		sp_ctl = Spotify_ctrl()
+		self.sp_ctl = sp_ctl.login()
+		Clock.schedule_interval(self.songinfoupdate,musicupdatetime) #sp_ctl is called from this
+
 	#cosmetic functions
 
 	#kivy callback, called everytime the window size changes
@@ -262,34 +265,42 @@ class MainThread(FloatLayout):
 		self.remove_widget(button.parent)
 		self.source_pass = False
 
-	#called when the source button is clicked
+	#drop down called when the source button is clicked
 	def select_source(self,source):
 		if self.source_pass == True:
 			pass
 		else:
 			source_icons = ['spotify','usb','video-input-component','bluetooth']
-			b = BoxLayout(orientation='vertical',size_hint=(0.01,0.04),x=source.x,y=source.y-(source.height*len(source_icons)))
-
+			b = BoxLayout(orientation='vertical',size=(source.width,source.height*len(source_icons)),x=source.x,y=source.y-(source.height))
+			print(source.y, source.height)
 			for icon in source_icons:
 				m = MDIconButton(icon=icon,theme_text_color='Custom',text_color=CarputerApp().theme_cls.primary_color)
 				m.bind(on_release=self.set_source)
 				b.add_widget(m)
+			self.add_widget(b)
 			with b.canvas:
 				Color(.9,.9,.9,.1)
-				b.rect = RoundedRectangle(pos=b.pos,size=(b.x/24,b.y/2),radius=(20,20,20,20))
-			self.add_widget(b)
+				b.rect = RoundedRectangle(pos=b.pos,size=(source.width,source.height*4),radius=(20,20,20,20))
 			self.source_pass = True
 
 	#playback control functions:
 	def control(self,control_msg):
 		#get current source:
-		source_control.control_playback(control_msg,self.source)
+		source_control.control_playback(control_msg,self.source,self.sp_ctl)
 
 
 	#refreshers
 	def refresh(self, dt):
 		self.perf_counter()
 		self.font_update()
+		random_int1 = random.randint(0,100)
+		random_int2 = random.randint(0,100)
+		random_int3 = random.randint(0,100)
+		random_int4 = random.randint(0,100)
+		self.ids.RPM.current_percent=random_int1
+		self.ids.ENGINE_LOAD.current_percent=random_int2
+		self.ids.three.current_percent=random_int3
+		self.ids.four.current_percent=random_int4
 		if self.is_playing == True:
 			self.ids.playpause.icon = 'pause'
 		else:
@@ -326,8 +337,12 @@ class MainThread(FloatLayout):
 	#display all the song info on the music screen
 	def songinfoupdate(self,dt):
 		#send source to source_control.py and return a dict to pull track info from
-		track = source_control.get_track_info(self.source)
+		track = source_control.get_track_info(self.source,self.sp_ctl)
+
 		if track == None:
+			pass
+		elif track['track'] == self.oldtrack:
+			self.song_pos_update(track)
 			pass
 		else:
 			try:
@@ -353,33 +368,38 @@ class MainThread(FloatLayout):
 					self.album = album
 					self.ids.album_art.reload()
 					self.oldtrack = track['track']
-				#change time from seconds to minutes and seconds
-				m, s = divmod(pos, 60)
-				if s < 10:
-					s = '%02d' %s
-				#update song position text
-				try:
-					self.ids.songpos.text = '{0}:{1}'.format(m, s)
-					m, s = divmod(dur, 60)
-					if s < 10:
-						s = '%02d' %s
-					#update remaining time left on song and slider
-					self.ids.songlength.text = '{0}:{1}'.format(m, s)
-					self.slider.max = dur
-					self.slider.value = pos
-				except Exception as e:
-					print('(songinfoupdate) failed to update time')
-					print(e)
+					self.song_pos_update(track)
 			except Exception as e:
 				print(e)
+
+	def song_pos_update(self,track):
+		pos = int(track['position']/1000)
+		dur = int(track['duration']/1000)
+		#change time from seconds to minutes and seconds
+		m, s = divmod(pos, 60)
+		if s < 10:
+			s = '%02d' %s
+		#update song position text
+		try:
+			self.ids.songpos.text = '{0}:{1}'.format(m, s)
+			m, s = divmod(dur, 60)
+			if s < 10:
+				s = '%02d' %s
+			#update remaining time left on song and slider
+			self.ids.songlength.text = '{0}:{1}'.format(m, s)
+			self.slider.max = dur
+			self.slider.value = pos
+		except Exception as e:
+			print('(songinfoupdate) failed to update time')
+			print(e)
 
 
 
 	def perf_counter(self):
+		perf_dict = {}
 		try:
-			self.ids.CPU.text = 'CPU: ' + str(psutil.cpu_percent()) + '%'
-			self.ids.RAMpc.text = 'RAM Used: ' + str(psutil.virtual_memory().percent) + '%'
-
+			self.ids.cpugraph.xlabel = 'CPU: ' + str(psutil.cpu_percent()) + '%'
+			self.ids.ramgraph.xlabel ='RAM Used: ' + str(psutil.virtual_memory().percent) + '%'
 		except:
 			pass
 
@@ -388,7 +408,7 @@ class MainThread(FloatLayout):
 	def perf_graph(self):
 		global graph
 		cpugraph = self.cpugraph
-		cpuplot= MeshLinePlot(color=[1,0,1])
+		cpuplot= MeshLinePlot(color=[1,0,0])
 		ramgraph = self.ramgraph
 		RAMplot= MeshLinePlot(color=[0,1,0])
 		while True:
@@ -422,7 +442,8 @@ class MainThread(FloatLayout):
 #_______________________________#MAIN APP#______________________________
 
 class CarputerApp(MDApp):
-	def __init(self,**kwargs):
+	def __init__(self,**kwargs):
+		App.__init__(self)
 		self.theme_cls.theme_style = 'Dark'
 		#load the config file
 		self.config = ConfigParser()
@@ -494,6 +515,7 @@ class CarputerApp(MDApp):
 		print('(main.py) Initializing: finished startup ')
 
 	def build_settings(self,settings):
+		#sets up custom transparent background canvas
 		with settings.canvas.before:
 			settings.canvas.before.clear()
 		with settings.canvas.before:

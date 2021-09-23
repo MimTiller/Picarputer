@@ -1,8 +1,8 @@
-from libs import spotify
+from libs.spotify import Spotify_ctrl
 import urllib
 
-def control_playback(control_msg,source):
-		track = get_track_info(source)
+def control_playback(control_msg,source,login):
+		track = get_track_info(source,login)
 		is_playing = track['is_playing']
 		shuffle_state = track['shuffle_state']
 		if control_msg == 'playpause':
@@ -17,13 +17,14 @@ def control_playback(control_msg,source):
 				control_msg = 'shuffle_on'
 		if isinstance(control_msg,float):
 			control_msg = int(control_msg)
-		print('(Spotify.py) sending {} command'.format(control_msg))
-		spotify.control(control_msg)
+		print('(source_control.py) sending {} command'.format(control_msg))
+		Spotify_ctrl.control(control_msg,login)
 
 
-def get_track_info(source):
+def get_track_info(source,login="N/A"):
 	if source == 'Spotify':
-		track = spotify.get_playing()
+		sp = Spotify_ctrl()
+		track = sp.get_playing(login)
 		return track
 
 	elif source == 'USB':
