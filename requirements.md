@@ -1,0 +1,23 @@
+## Requirements
+
+- setuptools
+- docutils
+- pygments
+- mutagen
+- obd
+- pyusb
+- dataset
+- eyed3
+- futures
+- kivy
+- kivy-garden
+- kivy_garden.graph
+- kivymd
+- psutil
+- pybluez
+- pygame
+- sounddevice
+- spotipy
+- speechrecognition
+- pyaudio
+- #ubuntu: need to install libbluetooth-dev
